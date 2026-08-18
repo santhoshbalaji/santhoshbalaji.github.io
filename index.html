@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en" data-theme="orbital" data-motion="running">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Santhosh Balaji S is a software developer in Chennai building dependable products, public systems, and civic technology."
+    />
+    <meta name="theme-color" content="#03050a" />
+    <meta property="og:title" content="Santhosh Balaji S — Software Developer" />
+    <meta
+      property="og:description"
+      content="Software developer building dependable products, public systems, and civic technology."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://santhoshbalaji.cloud/" />
+    <link rel="canonical" href="https://santhoshbalaji.cloud/" />
+    <title>Santhosh Balaji S — Software Developer</title>
+    <link rel="icon" href="favicon.svg?v=10" type="image/svg+xml" />
+    <link rel="stylesheet" href="theme.css?v=4" />
+    <link rel="stylesheet" href="styles.css?v=37" />
+    <script src="script.js?v=17" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <div class="cosmos" aria-hidden="true">
+      <canvas id="starfield"></canvas>
+      <div class="cosmic-vignette"></div>
+      <div class="space-noise"></div>
+    </div>
+
+    <header class="site-header" id="site-header">
+      <a class="wordmark" href="#top" aria-label="Santhosh Balaji S, home">
+        <span class="wordmark-name"><b>Santhosh</b><span>Balaji</span><em>S</em></span>
+        <span class="wordmark-role"><i aria-hidden="true"></i>Software Developer</span>
+      </a>
+
+      <nav class="site-nav" aria-label="Primary navigation">
+        <a href="#work">Missions</a>
+        <a href="#experience">Trajectory</a>
+        <a href="#contact">Transmit</a>
+      </nav>
+
+      <button class="motion-control" id="motion-control" type="button" aria-pressed="false">
+        <span class="motion-icon" aria-hidden="true"><i></i></span>
+        <span class="motion-label">Pause motion</span>
+      </button>
+
+      <button class="menu-button" id="menu-button" type="button" aria-expanded="false" aria-controls="mobile-nav">
+        Menu
+      </button>
+      <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation" hidden>
+        <a href="#work">Missions</a>
+        <a href="#experience">Trajectory</a>
+        <a href="#contact">Transmit</a>
+      </nav>
+    </header>
+
+    <nav class="flight-rail" aria-label="Page trajectory">
+      <span class="rail-track" aria-hidden="true"><i id="flight-marker"></i></span>
+      <a href="#top" data-flight-section="top"><b>Origin</b><small>00</small></a>
+      <a href="#work" data-flight-section="work"><b>Missions</b><small>01</small></a>
+      <a href="#experience" data-flight-section="experience"><b>Trajectory</b><small>02</small></a>
+      <a href="#contact" data-flight-section="contact"><b>Signal</b><small>03</small></a>
+    </nav>
+
+    <main id="main">
+      <section class="hero" id="top" aria-labelledby="hero-title">
+        <div class="hero-copy reveal">
+          <div class="hero-identity">
+            <figure class="identity-portrait">
+              <img
+                src="assets/profile/santhosh-balaji.jpg"
+                width="576"
+                height="720"
+                alt="Portrait of Santhosh Balaji S"
+                decoding="async"
+                fetchpriority="high"
+              />
+            </figure>
+            <div class="identity-copy">
+              <strong>Santhosh Balaji S</strong>
+              <span>Full-stack developer</span>
+              <small>Product engineering · Public systems · Chennai</small>
+            </div>
+          </div>
+          <h1 id="hero-title">I build systems that hold up in the <em>real world.</em></h1>
+          <p class="hero-lede">
+            Eight years across product engineering, government systems, and independent civic technology.
+          </p>
+          <div class="hero-actions">
+            <a class="primary-action" href="#work">Enter the system <span aria-hidden="true">↘</span></a>
+            <button class="copy-email" id="copy-email" type="button" data-email="contact@santhoshbalaji.cloud">
+              <span class="copy-label">Copy email</span><span aria-hidden="true">↗</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="gravity-stage reveal" id="gravity-stage" data-active-orbit="jurisfield" aria-label="Interactive product orrery with an India-facing Earth at the centre">
+          <div class="solar-orbits" aria-hidden="true">
+            <span class="ecliptic-disk"></span>
+            <i class="solar-orbit orbit-jurisfield" data-orbit-path="jurisfield"></i>
+            <i class="solar-orbit orbit-atlas" data-orbit-path="atlas"></i>
+            <i class="solar-orbit orbit-nammatn" data-orbit-path="nammatn"></i>
+            <i class="solar-orbit orbit-mapsmith" data-orbit-path="mapsmith"></i>
+            <i class="asteroid-belt"></i>
+            <span class="solar-glow"></span>
+          </div>
+
+          <div class="gravity-core" aria-hidden="true">
+            <span class="earth-globe">
+              <!-- India-facing, cloud-free Blue Marble surface data, NASA Earth Observatory -->
+              <canvas
+                class="earth-render"
+                id="earth-render"
+                width="480"
+                height="480"
+                data-focus="India"
+                data-texture="assets/earth-cloudless-surface.jpg"
+              ></canvas>
+            </span>
+          </div>
+
+          <aside class="orbit-readout" aria-live="polite">
+            <p class="orbit-readout-status"><i aria-hidden="true"></i><span>Active world</span><b id="orbit-readout-code">01 / 04</b></p>
+            <div class="orbit-readout-project">
+              <img id="orbit-readout-logo" src="assets/logos/jurisfield.svg" alt="" />
+              <span><b id="orbit-readout-name">JurisField</b><small id="orbit-readout-class">Field operations</small></span>
+            </div>
+            <p id="orbit-readout-note">Trusted evidence from field to office.</p>
+            <span class="orbit-readout-hint">Hover to identify · click to inspect</span>
+          </aside>
+
+          <a class="system-object object-jurisfield" href="#work" data-select-project="jurisfield" data-orbit-planet="jurisfield" aria-label="Explore JurisField">
+            <span class="object-logo"><img src="assets/logos/jurisfield.svg" alt="" /></span>
+          </a>
+          <a class="system-object object-atlas" href="#work" data-select-project="atlas" data-orbit-planet="atlas" aria-label="Explore Atlas">
+            <span class="object-logo"><img src="assets/logos/atlas.svg" alt="" /></span>
+          </a>
+          <a class="system-object object-nammatn" href="#work" data-select-project="nammatn" data-orbit-planet="nammatn" aria-label="Explore NammaTN">
+            <span class="object-logo"><img src="assets/logos/nammatn.svg" alt="" /></span>
+          </a>
+          <a class="system-object object-mapsmith" href="#work" data-select-project="mapsmith" data-orbit-planet="mapsmith" aria-label="Explore MapSmith">
+            <span class="object-logo"><img src="assets/logos/mapsmith.svg" alt="" /></span>
+          </a>
+
+          <div class="stage-instruction"><span aria-hidden="true">●</span> Products in live orbit</div>
+        </div>
+
+      </section>
+
+      <section class="work-section" id="work" aria-labelledby="work-title">
+        <div class="section-heading reveal">
+          <p class="section-label">Selected work / 04 systems</p>
+          <div class="section-heading-copy">
+            <h2 id="work-title">Selected systems.</h2>
+            <p>Explore what each product does, the role I owned, and the stack behind it.</p>
+          </div>
+        </div>
+
+        <div class="mission-explorer reveal" id="mission-explorer" data-active-project="jurisfield">
+          <div class="mission-selector" role="tablist" aria-label="Product missions">
+            <button class="mission-tab is-active" id="tab-jurisfield" type="button" role="tab" aria-selected="true" aria-controls="jurisfield" data-project="jurisfield">
+              <b class="mission-number" aria-hidden="true">01</b><img src="assets/logos/jurisfield.svg" alt="" /><span>JurisField<small>Field operations</small></span>
+            </button>
+            <button class="mission-tab" id="tab-atlas" type="button" role="tab" aria-selected="false" aria-controls="atlas" data-project="atlas" tabindex="-1">
+              <b class="mission-number" aria-hidden="true">02</b><img src="assets/logos/atlas.svg" alt="" /><span>Atlas<small>AI media</small></span>
+            </button>
+            <button class="mission-tab" id="tab-nammatn" type="button" role="tab" aria-selected="false" aria-controls="nammatn" data-project="nammatn" tabindex="-1">
+              <b class="mission-number" aria-hidden="true">03</b><img src="assets/logos/nammatn.svg" alt="" /><span>NammaTN<small>Civic technology</small></span>
+            </button>
+            <button class="mission-tab" id="tab-mapsmith" type="button" role="tab" aria-selected="false" aria-controls="mapsmith" data-project="mapsmith" tabindex="-1">
+              <b class="mission-number" aria-hidden="true">04</b><img src="assets/logos/mapsmith.svg" alt="" /><span>MapSmith<small>GIS infrastructure</small></span>
+            </button>
+          </div>
+
+          <div class="mission-readout" aria-live="polite">
+            <div class="mission-emblem" aria-hidden="true">
+              <span class="emblem-ring emblem-ring-wide"><i></i></span>
+              <span class="emblem-ring emblem-ring-tight"><i></i></span>
+              <span class="emblem-core">
+                <img class="emblem-logo logo-jurisfield" src="assets/logos/jurisfield.svg" alt="" />
+                <img class="emblem-logo logo-atlas" src="assets/logos/atlas.svg" alt="" />
+                <img class="emblem-logo logo-nammatn" src="assets/logos/nammatn.svg" alt="" />
+                <img class="emblem-logo logo-mapsmith" src="assets/logos/mapsmith.svg" alt="" />
+              </span>
+            </div>
+
+            <article class="mission-panel is-active" id="jurisfield" role="tabpanel" aria-labelledby="tab-jurisfield" data-panel="jurisfield">
+              <p class="mission-kicker">Geospatial field operations</p>
+              <h3>Evidence that stays trustworthy from the field to the office.</h3>
+              <p>Offline geometry, photos, signatures, and audit-ready evidence across web and mobile.</p>
+              <dl>
+                <div><dt>Role</dt><dd>Product design · full-stack engineering · deployment</dd></div>
+                <div><dt>Stack</dt><dd>Angular · Go · PostGIS · MapLibre · SwiftUI · Kotlin</dd></div>
+              </dl>
+            </article>
+
+            <article class="mission-panel" id="atlas" role="tabpanel" aria-labelledby="tab-atlas" data-panel="atlas" hidden>
+              <p class="mission-kicker">AI-assisted creative tooling</p>
+              <h3>A video workflow where every AI step can be inspected.</h3>
+              <p>Research, scripting, media planning, narration, rendering, and publishing in one recoverable workflow.</p>
+              <dl>
+                <div><dt>Role</dt><dd>Product architecture · full-stack engineering · media pipeline</dd></div>
+                <div><dt>Stack</dt><dd>Angular · Go · Python · PostgreSQL · MinIO · FFmpeg</dd></div>
+              </dl>
+              <a class="mission-link" href="https://atlas.santhoshbalaji.cloud/" target="_blank" rel="noreferrer">Visit Atlas <span>↗</span></a>
+            </article>
+
+            <article class="mission-panel" id="nammatn" role="tabpanel" aria-labelledby="tab-nammatn" data-panel="nammatn" hidden>
+              <p class="mission-kicker">Independent civic technology</p>
+              <h3>A public trail from a citizen’s report to visible follow-through.</h3>
+              <p>Bilingual local reporting, community verification, jurisdiction-aware routing, and transparent tracking.</p>
+              <dl>
+                <div><dt>Role</dt><dd>Founder · product direction · full-stack engineering</dd></div>
+                <div><dt>Stack</dt><dd>Angular · Go · PostgreSQL · PostGIS · D3 Geo · Docker</dd></div>
+              </dl>
+              <a class="mission-link" href="https://nammatn.in/" target="_blank" rel="noreferrer">Visit NammaTN <span>↗</span></a>
+            </article>
+
+            <article class="mission-panel" id="mapsmith" role="tabpanel" aria-labelledby="tab-mapsmith" data-panel="mapsmith" hidden>
+              <p class="mission-kicker">Geospatial infrastructure</p>
+              <h3>Self-hosted GIS with a programmable core.</h3>
+              <p>Publish spatial data, author maps, run analysis, and automate through APIs and a CLI.</p>
+              <dl>
+                <div><dt>Role</dt><dd>Product architecture · full-stack engineering · platform operations</dd></div>
+                <div><dt>Stack</dt><dd>Angular · Go · PostGIS · MapLibre · Keycloak · Docker</dd></div>
+              </dl>
+            </article>
+          </div>
+        </div>
+
+        <aside class="career-trace reveal" id="experience" aria-label="Career trajectory" data-active-career="independent">
+          <div class="career-trace-heading">
+            <span><i aria-hidden="true"></i> Career trace</span>
+            <small>2019 → now</small>
+          </div>
+
+          <div class="career-path" role="tablist" aria-label="Career trajectory" aria-orientation="horizontal">
+            <button class="career-node" id="career-tab-zoho" type="button" role="tab" aria-selected="false" aria-controls="career-zoho" data-career="zoho" tabindex="-1">
+              <i aria-hidden="true"></i><span>Zoho</span><small>2019—23</small>
+            </button>
+            <button class="career-node" id="career-tab-forest" type="button" role="tab" aria-selected="false" aria-controls="career-forest" data-career="forest" tabindex="-1">
+              <i aria-hidden="true"></i><span>Tamil Nadu Forest Department</span><small>2024—25</small>
+            </button>
+            <button class="career-node is-active" id="career-tab-independent" type="button" role="tab" aria-selected="true" aria-controls="career-independent" data-career="independent">
+              <i aria-hidden="true"></i><span>Product Founder</span><small>2025—Now</small>
+            </button>
+          </div>
+
+          <div class="career-glance" aria-live="polite">
+            <article class="career-note" id="career-zoho" role="tabpanel" aria-labelledby="career-tab-zoho" data-career-panel="zoho" tabindex="0" hidden>
+              <b>Member Technical Staff</b>
+              <span>Zoho Corporation <small>Compiler systems · collaboration · platform architecture</small></span>
+            </article>
+            <article class="career-note" id="career-forest" role="tabpanel" aria-labelledby="career-tab-forest" data-career-panel="forest" tabindex="0" hidden>
+              <b>Web Developer</b>
+              <span>Tamil Nadu Forest Department <small>Government workflows · operational systems</small></span>
+            </article>
+            <article class="career-note is-active" id="career-independent" role="tabpanel" aria-labelledby="career-tab-independent" data-career-panel="independent" tabindex="0">
+              <b>Founder &amp; Product Engineer</b>
+              <span>Founder-led products <small>JurisField · Atlas · NammaTN · MapSmith</small></span>
+            </article>
+          </div>
+        </aside>
+      </section>
+
+      <section class="contact-section" id="contact" aria-labelledby="contact-title">
+        <div class="transmission-visual" aria-hidden="true">
+          <span class="transmission-core"></span>
+          <i></i><i></i><i></i>
+          <b>SB</b>
+        </div>
+        <div class="contact-content reveal">
+          <p class="section-label">Deep-space transmission</p>
+          <h2 id="contact-title">Let’s build something useful.</h2>
+          <p>Open to thoughtful product work and civic-technology collaboration.</p>
+          <a class="contact-email" href="mailto:contact@santhoshbalaji.cloud">
+            Start a conversation <span>↗</span>
+          </a>
+          <small>contact@santhoshbalaji.cloud</small>
+          <nav class="social-links" aria-label="Social profiles">
+            <a href="https://x.com/SanthoshBala_S" target="_blank" rel="me noreferrer" aria-label="Santhosh Balaji S on X">X <span aria-hidden="true">↗</span></a>
+            <a href="https://linkedin.com/in/santhoshbalajis" target="_blank" rel="me noreferrer" aria-label="Santhosh Balaji S on LinkedIn">LinkedIn <span aria-hidden="true">↗</span></a>
+            <a href="https://github.com/santhoshbalaji" target="_blank" rel="me noreferrer" aria-label="Santhosh Balaji S on GitHub">GitHub <span aria-hidden="true">↗</span></a>
+          </nav>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p>© <span id="current-year">2026</span> Santhosh Balaji S</p>
+      <p>Chennai · Earth</p>
+      <div class="footer-links" aria-label="Social profiles">
+        <a href="https://x.com/SanthoshBala_S" target="_blank" rel="me noreferrer">X</a>
+        <a href="https://linkedin.com/in/santhoshbalajis" target="_blank" rel="me noreferrer">LinkedIn</a>
+        <a href="https://github.com/santhoshbalaji" target="_blank" rel="me noreferrer">GitHub ↗</a>
+      </div>
+    </footer>
+
+    <div class="toast" id="toast" role="status" aria-live="polite">Signal copied</div>
+  </body>
+</html>

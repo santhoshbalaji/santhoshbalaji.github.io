@@ -1,0 +1,75 @@
+/*
+ * Orbital theme — the single source of truth for the portfolio's visual language.
+ * Components consume semantic tokens from this file and do not define their own palette.
+ */
+
+:root,
+[data-theme="orbital"] {
+  color-scheme: dark;
+
+  /* Astronomical palette */
+  --space-void: #000000;
+  --space-deep: #070b14;
+  --space-raised: #0c1220;
+  --space-panel: #11192a;
+  --space-panel-soft: #151e31;
+  --starlight: #f2f6ff;
+  --moonlight: #aab7cb;
+  --dust: #68758a;
+  --orbit-line: rgba(159, 178, 211, 0.2);
+  --orbit-line-strong: rgba(183, 201, 231, 0.38);
+  --signal-blue: #8fa7ff;
+  --signal-blue-bright: #b8c6ff;
+  --earth-atmosphere: #64b5f6;
+  --solar: #f2c96d;
+  --aurora: #6edbc6;
+  --danger-star: #ed786a;
+  --plasma: #ff9f68;
+  --ice: #dce7ff;
+  --ultraviolet: #7569f7;
+
+  /* Product spectrum */
+  --jurisfield: #b8d94b;
+  --jurisfield-soft: rgba(184, 217, 75, 0.13);
+  --atlas: #8f78ff;
+  --atlas-soft: rgba(143, 120, 255, 0.14);
+  --nammatn: #ed786a;
+  --nammatn-soft: rgba(237, 120, 106, 0.13);
+  --mapsmith: #63cbbb;
+  --mapsmith-soft: rgba(99, 203, 187, 0.13);
+
+  /* Typography */
+  --font-display: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-orbit: "SFMono-Regular", "SF Mono", Consolas, "Liberation Mono", monospace;
+
+  /* Layout */
+  --page-width: min(90rem, calc(100vw - clamp(2rem, 7vw, 8rem)));
+  --header-height: 5.25rem;
+  --section-space: clamp(5.5rem, 9vw, 9rem);
+  --panel-radius: 1.35rem;
+  --control-radius: 999px;
+
+  /* Depth */
+  --shadow-orbit: 0 2rem 6rem rgba(0, 0, 0, 0.38);
+  --shadow-satellite: 0 0.8rem 2.5rem rgba(0, 0, 0, 0.42);
+  --shadow-planet: 0 3rem 8rem rgba(0, 0, 0, 0.58);
+  --surface-glass: rgba(9, 14, 25, 0.76);
+  --surface-glass-strong: rgba(7, 11, 20, 0.92);
+
+  /* Motion */
+  --ease-orbit: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-fast: 180ms;
+  --duration-reveal: 680ms;
+  --duration-flight: 900ms;
+}
+
+@media (max-width: 820px) {
+  :root,
+  [data-theme="orbital"] {
+    --page-width: calc(100vw - 2.5rem);
+    --header-height: 4.6rem;
+    --section-space: 5.5rem;
+    --panel-radius: 1rem;
+  }
+}

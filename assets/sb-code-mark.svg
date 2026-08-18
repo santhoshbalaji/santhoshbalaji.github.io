@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 88 64" role="img" aria-labelledby="title desc">
+  <title id="title">{SB} developer mark</title>
+  <desc id="desc">The initials SB enclosed by code braces inside a subtle orbital capsule.</desc>
+  <defs>
+    <linearGradient id="panel" x1="8" y1="8" x2="80" y2="56" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#151e31"/>
+      <stop offset="1" stop-color="#070b14"/>
+    </linearGradient>
+    <clipPath id="capsule">
+      <rect x="5" y="8" width="78" height="48" rx="15"/>
+    </clipPath>
+  </defs>
+  <rect x="5" y="8" width="78" height="48" rx="15" fill="url(#panel)" stroke="#68758a" stroke-opacity=".72"/>
+  <g clip-path="url(#capsule)" fill="none">
+    <ellipse cx="44" cy="32" rx="38" ry="13" stroke="#8fa7ff" stroke-opacity=".22" transform="rotate(-12 44 32)"/>
+    <path d="M5 43c16 7 38 7 57-1" stroke="#64b5f6" stroke-opacity=".16"/>
+  </g>
+  <circle cx="75" cy="17" r="2.4" fill="#f2c96d"/>
+  <text x="44" y="39.5" fill="#f2f6ff" font-family="SFMono-Regular, SF Mono, Consolas, monospace" font-size="21" font-weight="700" text-anchor="middle">
+    <tspan fill="#f2c96d" font-weight="500">{</tspan><tspan>SB</tspan><tspan fill="#f2c96d" font-weight="500">}</tspan>
+  </text>
+</svg>
