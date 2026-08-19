@@ -19,7 +19,7 @@
     <title>Santhosh Balaji S — Software Developer</title>
     <link rel="icon" href="favicon.svg?v=10" type="image/svg+xml" />
     <link rel="stylesheet" href="theme.css?v=4" />
-    <link rel="stylesheet" href="styles.css?v=37" />
+    <link rel="stylesheet" href="styles.css?v=38" />
     <script src="script.js?v=17" defer></script>
   </head>
   <body>
@@ -240,13 +240,20 @@
 
           <div class="career-path" role="tablist" aria-label="Career trajectory" aria-orientation="horizontal">
             <button class="career-node" id="career-tab-zoho" type="button" role="tab" aria-selected="false" aria-controls="career-zoho" data-career="zoho" tabindex="-1">
-              <i aria-hidden="true"></i><span>Zoho</span><small>2019—23</small>
+              <span class="career-brand career-brand-zoho" aria-hidden="true">
+                <img src="assets/logos/zoho-official.svg?v=1" width="34" height="15" alt="" />
+              </span>
+              <span>Zoho</span><small>2019—23</small>
             </button>
             <button class="career-node" id="career-tab-forest" type="button" role="tab" aria-selected="false" aria-controls="career-forest" data-career="forest" tabindex="-1">
-              <i aria-hidden="true"></i><span>Tamil Nadu Forest Department</span><small>2024—25</small>
+              <span class="career-brand career-brand-forest" aria-hidden="true">
+                <img src="assets/logos/forest-work.svg?v=1" width="24" height="24" alt="" />
+              </span>
+              <span>Tamil Nadu Forest Department</span><small>2024—25</small>
             </button>
             <button class="career-node is-active" id="career-tab-independent" type="button" role="tab" aria-selected="true" aria-controls="career-independent" data-career="independent">
-              <i aria-hidden="true"></i><span>Product Founder</span><small>2025—Now</small>
+              <span class="career-brand career-brand-founder" aria-hidden="true"><i></i></span>
+              <span>Product Founder</span><small>2025—Now</small>
             </button>
           </div>
 
@@ -298,6 +305,7 @@
         <a href="https://linkedin.com/in/santhoshbalajis" target="_blank" rel="me noreferrer">LinkedIn</a>
         <a href="https://github.com/santhoshbalaji" target="_blank" rel="me noreferrer">GitHub ↗</a>
       </div>
+      <p class="trademark-note">Zoho is a trademark of Zoho Corporation Private Limited and/or its affiliates. Organization names and marks are used solely for factual identification; no endorsement is implied.</p>
     </footer>
 
     <div class="toast" id="toast" role="status" aria-live="polite">Signal copied</div>

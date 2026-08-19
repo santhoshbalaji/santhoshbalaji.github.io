@@ -5,7 +5,7 @@ const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
 const theme = await readFile(new URL("../theme.css", import.meta.url), "utf8");
 const script = await readFile(new URL("../script.js", import.meta.url), "utf8");
 const cname = await readFile(new URL("../CNAME", import.meta.url), "utf8");
-const logoPaths = ["jurisfield.svg", "atlas.svg", "nammatn.svg", "mapsmith.svg"];
+const logoPaths = ["jurisfield.svg", "atlas.svg", "nammatn.svg", "mapsmith.svg", "zoho-official.svg", "forest-work.svg"];
 let logosPresent = true;
 try {
   await Promise.all(logoPaths.map((name) => access(new URL(`../assets/logos/${name}`, import.meta.url))));
@@ -56,6 +56,8 @@ const checks = [
   [html.includes("JurisField") && html.includes("Atlas") && html.includes("NammaTN") && html.includes("MapSmith"), "all four systems are presented"],
   [html.includes("https://atlas.santhoshbalaji.cloud/") && html.includes("https://nammatn.in/"), "live product URLs are configured"],
   [html.includes("Zoho Corporation") && html.includes("Tamil Nadu Forest Department") && html.includes("Founder &amp; Product Engineer"), "career trajectory is represented"],
+  [html.includes('assets/logos/zoho-official.svg?v=1') && html.includes('assets/logos/forest-work.svg?v=1') && html.includes('class="career-brand career-brand-zoho"') && html.includes('class="career-brand career-brand-forest"'), "career trace uses the official Zoho mark and an original forest symbol"],
+  [html.includes("Zoho is a trademark of Zoho Corporation Private Limited and/or its affiliates.") && html.includes("no endorsement is implied") && !html.toLowerCase().includes("tamil-nadu-government-emblem"), "career trademark attribution and non-endorsement notice are present"],
   [(html.includes("8 years") || html.includes("Eight years")) && !html.includes("Political Science") && !html.includes("CURRENT STUDY"), "career remains concise and education content is removed"],
   [!html.includes(".pdf") && !html.includes("Résumé"), "PDF and resume download content are removed"],
   [logosPresent && logoPaths.every((name) => html.includes(`assets/logos/${name}`)), "canonical product logos are present and linked"],
@@ -68,7 +70,7 @@ const checks = [
   [galaxyPresent && css.includes('url("assets/galaxy-black-field.jpg")') && css.includes("#starfield") && !html.includes('class="galactic-plane"') && !html.includes('class="distant-world"'), "pitch-black generated galaxy image replaces the synthetic purple background objects"],
   [css.includes("font-size: clamp(3.5rem, 5.35vw, 6.1rem)") && css.includes("font-size: clamp(2.65rem, 10.8vw, 3.45rem)"), "hero headline scale is reduced across desktop and mobile"],
   [theme.includes("--space-void: #000000") && css.includes(".work-section { overflow: hidden; padding-bottom: clamp(3rem,5vw,5rem); background: transparent; }") && css.includes(".contact-section { display: grid; grid-template-columns: 0.9fr 1.1fr; align-items: center; min-height: 39rem; overflow: hidden; background: transparent;") && css.includes("background: transparent; font: 580 0.5rem var(--font-orbit);"), "pitch-black galaxy canvas continues behind every page section"],
-  [html.includes('theme.css?v=4') && html.includes('styles.css?v=37'), "continuous background theme assets are cache-busted"],
+  [html.includes('theme.css?v=4') && html.includes('styles.css?v=38'), "continuous background theme assets are cache-busted"],
   [script.includes("twinkle") && script.includes("spark") && script.includes("const flare"), "stars include restrained twinkle and bright-star diffraction"],
   [html.includes('id="gravity-stage"') && html.includes('class="system-object object-jurisfield'), "interactive gravity system is present"],
   [(html.match(/data-orbit-planet=/g) || []).length === 4 && (html.match(/data-orbit-path=/g) || []).length === 4 && script.includes("updateProductOrbits") && script.includes("orbitalElapsed"), "four independently animated product orbits are wired"],
