@@ -408,7 +408,7 @@ sizeStarfield();
 startStarfield();
 
 gravityStage.addEventListener("pointermove", (event) => {
-  if (!motionRunning) return;
+  if (!motionRunning || gravityStage.classList.contains("has-three-universe")) return;
   const bounds = gravityStage.getBoundingClientRect();
   const x = (event.clientX - bounds.left) / bounds.width - 0.5;
   const y = (event.clientY - bounds.top) / bounds.height - 0.5;

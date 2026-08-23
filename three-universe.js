@@ -24,8 +24,8 @@ async function initialiseUniverse() {
   renderer.toneMappingExposure = 1.24;
 
   const scene = new THREE.Scene();
-  const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 2000);
-  camera.position.set(0, 0, 1000);
+  const camera = new THREE.PerspectiveCamera(28, 1, 10, 4000);
+  camera.position.set(0, 0, 1200);
   camera.lookAt(0, 0, 0);
 
   const universe = new THREE.Group();
@@ -96,6 +96,8 @@ async function initialiseUniverse() {
 
   const raycaster = new THREE.Raycaster();
   const pointer = new THREE.Vector2(4, 4);
+  const projected = new THREE.Vector3();
+  const worldPosition = new THREE.Vector3();
   const anchors = new Map(
     [...stage.querySelectorAll("[data-orbit-planet]")].map((anchor) => [anchor.dataset.orbitPlanet, anchor]),
   );
@@ -107,20 +109,29 @@ async function initialiseUniverse() {
   let elapsed = 0;
   let lastFrame = performance.now();
   let animationFrame = 0;
+  let baseCameraDistance = 1200;
+  let currentZoom = 1;
+  let targetZoom = 1;
+  let dragging = false;
+  let pointerDown = null;
+  let dragDistance = 0;
+  let targetRotationX = 0;
+  let targetRotationY = 0;
 
   stage.dataset.threeState = "ready";
   stage.dataset.threeVersion = THREE.REVISION;
   stage.dataset.threeDepth = "complete";
+  stage.dataset.threeInteraction = "orbit-zoom-select";
   stage.classList.add("has-three-universe");
 
   function resize() {
     const width = Math.max(1, stage.clientWidth);
     const height = Math.max(1, stage.clientHeight);
     renderer.setSize(width, height, false);
-    camera.left = width / -2;
-    camera.right = width / 2;
-    camera.top = height / 2;
-    camera.bottom = height / -2;
+    camera.aspect = width / height;
+    baseCameraDistance = (height / 2) / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+    camera.position.z = baseCameraDistance * currentZoom;
+    camera.far = Math.max(4000, baseCameraDistance * 3);
     camera.updateProjectionMatrix();
     environment.resize(width, height);
     render(performance.now(), true);
@@ -156,50 +167,136 @@ async function initialiseUniverse() {
     lastFrame = timestamp;
     if (motionEnabled) elapsed += delta;
 
+    universe.rotation.x += (targetRotationX - universe.rotation.x) * 0.075;
+    universe.rotation.y += (targetRotationY - universe.rotation.y) * 0.075;
+    currentZoom += (targetZoom - currentZoom) * 0.09;
+    camera.position.z = baseCameraDistance * currentZoom;
+
     earth.mesh.rotation.y = THREE.MathUtils.degToRad(0.6) * Math.sin(elapsed * 0.18);
     earth.atmosphere.material.uniforms.viewVector.value.copy(camera.position);
     const stageBounds = stage.getBoundingClientRect();
-    const coreBounds = gravityCore?.getBoundingClientRect();
-    if (coreBounds) {
-      earth.group.position.set(
-        coreBounds.left + coreBounds.width / 2 - stageBounds.left - stageBounds.width / 2,
-        stageBounds.height / 2 - (coreBounds.top + coreBounds.height / 2 - stageBounds.top),
-        0,
-      );
-      earth.group.scale.setScalar((coreBounds.width / 2) / 0.52);
+    if (gravityCore) {
+      earth.group.position.set(0, 0, 0);
+      earth.group.scale.setScalar((gravityCore.offsetWidth / 2) / 0.52);
     }
     environment.update(elapsed, hoveredProject || activeProject, motionEnabled);
 
     products.forEach((product) => {
       const anchor = anchors.get(product.key);
       if (!anchor) return;
-      const anchorBounds = anchor.getBoundingClientRect();
+      const anchorStyle = getComputedStyle(anchor);
+      const orbitX = Number.parseFloat(anchorStyle.getPropertyValue("--orbit-x")) || 0;
+      const orbitY = Number.parseFloat(anchorStyle.getPropertyValue("--orbit-y")) || 0;
+      const orbitScale = Number.parseFloat(anchorStyle.getPropertyValue("--orbit-scale")) || 1;
       product.group.position.set(
-        anchorBounds.left + anchorBounds.width / 2 - stageBounds.left - stageBounds.width / 2,
-        stageBounds.height / 2 - (anchorBounds.top + anchorBounds.height / 2 - stageBounds.top),
+        orbitX,
+        -orbitY,
         environment.depthFor(product.key, Number.parseInt(anchor.style.zIndex || "8", 10)) + 2,
       );
-      product.group.scale.setScalar((anchorBounds.width / 2) / product.size);
+      product.group.scale.setScalar((anchor.offsetWidth / 2) / product.size * orbitScale);
       product.surface.rotation.y += motionEnabled ? delta * (0.18 + product.radius * 0.018) : 0;
+      product.satellitePivot.rotation.z += motionEnabled ? delta * (0.22 + product.radius * 0.02) : 0;
       const selected = product.key === (hoveredProject || activeProject);
       product.glow.material.opacity += ((selected ? 0.58 : 0.3) - product.glow.material.opacity) * 0.08;
     });
 
+    universe.updateMatrixWorld(true);
+    camera.updateMatrixWorld(true);
+    products.forEach((product) => {
+      const anchor = anchors.get(product.key);
+      if (!anchor) return;
+      const orbitScale = Number.parseFloat(getComputedStyle(anchor).getPropertyValue("--orbit-scale")) || 1;
+      product.group.getWorldPosition(worldPosition);
+      projected.copy(worldPosition).project(camera);
+      const perspectiveScale = baseCameraDistance / Math.max(80, camera.position.z - worldPosition.z);
+      anchor.style.setProperty("--scene-x", `${(projected.x * stageBounds.width * 0.5).toFixed(2)}px`);
+      anchor.style.setProperty("--scene-y", `${(-projected.y * stageBounds.height * 0.5).toFixed(2)}px`);
+      anchor.style.setProperty("--scene-scale", (orbitScale * perspectiveScale).toFixed(3));
+    });
+
     renderer.render(scene, camera);
-    if (motionEnabled || force) animationFrame = window.requestAnimationFrame(render);
+    const unsettled = Math.abs(targetRotationX - universe.rotation.x) > 0.0005
+      || Math.abs(targetRotationY - universe.rotation.y) > 0.0005
+      || Math.abs(targetZoom - currentZoom) > 0.0005;
+    if (motionEnabled || dragging || force || unsettled) animationFrame = window.requestAnimationFrame(render);
   }
 
   canvas.addEventListener("pointermove", (event) => {
+    if (dragging && pointerDown) {
+      const dx = event.clientX - pointerDown.x;
+      const dy = event.clientY - pointerDown.y;
+      dragDistance = Math.max(dragDistance, Math.hypot(dx, dy));
+      targetRotationY = THREE.MathUtils.clamp(pointerDown.rotationY + dx * 0.0037, -0.82, 0.82);
+      targetRotationX = THREE.MathUtils.clamp(pointerDown.rotationX + dy * 0.0029, -0.46, 0.38);
+      setHovered(null);
+      render(performance.now(), true);
+      return;
+    }
     setHovered(hitTest(event));
   }, { passive: true });
 
-  canvas.addEventListener("click", (event) => {
-    const selected = hitTest(event);
+  canvas.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0) return;
+    dragging = true;
+    dragDistance = 0;
+    pointerDown = { x: event.clientX, y: event.clientY, rotationX: targetRotationX, rotationY: targetRotationY };
+    try {
+      canvas.setPointerCapture(event.pointerId);
+    } catch {
+      // Synthetic and assistive pointer sources may not expose a capturable pointer.
+    }
+    canvas.classList.add("is-dragging");
+  });
+
+  canvas.addEventListener("pointerup", (event) => {
+    const selected = dragDistance < 7 ? hitTest(event) : null;
+    dragging = false;
+    pointerDown = null;
+    canvas.classList.remove("is-dragging");
+    if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
     if (selected) anchors.get(selected)?.click();
   });
 
+  canvas.addEventListener("pointercancel", () => {
+    dragging = false;
+    pointerDown = null;
+    canvas.classList.remove("is-dragging");
+  });
+
+  canvas.addEventListener("wheel", (event) => {
+    event.preventDefault();
+    targetZoom = THREE.MathUtils.clamp(targetZoom + Math.sign(event.deltaY) * 0.085, 0.78, 1.34);
+    render(performance.now(), true);
+  }, { passive: false });
+
+  canvas.addEventListener("dblclick", () => {
+    targetRotationX = 0;
+    targetRotationY = 0;
+    targetZoom = 1;
+    render(performance.now(), true);
+  });
+
+  canvas.addEventListener("keydown", (event) => {
+    const key = event.key.toLowerCase();
+    const handled = ["arrowleft", "arrowright", "arrowup", "arrowdown", "+", "=", "-", "_", "r", "0"].includes(key);
+    if (!handled) return;
+    event.preventDefault();
+    if (key === "arrowleft") targetRotationY = THREE.MathUtils.clamp(targetRotationY - 0.12, -0.82, 0.82);
+    if (key === "arrowright") targetRotationY = THREE.MathUtils.clamp(targetRotationY + 0.12, -0.82, 0.82);
+    if (key === "arrowup") targetRotationX = THREE.MathUtils.clamp(targetRotationX - 0.1, -0.46, 0.38);
+    if (key === "arrowdown") targetRotationX = THREE.MathUtils.clamp(targetRotationX + 0.1, -0.46, 0.38);
+    if (["+", "="].includes(key)) targetZoom = THREE.MathUtils.clamp(targetZoom - 0.085, 0.78, 1.34);
+    if (["-", "_"].includes(key)) targetZoom = THREE.MathUtils.clamp(targetZoom + 0.085, 0.78, 1.34);
+    if (["r", "0"].includes(key)) {
+      targetRotationX = 0;
+      targetRotationY = 0;
+      targetZoom = 1;
+    }
+    render(performance.now(), true);
+  });
+
   canvas.addEventListener("pointerleave", () => {
-    setHovered(null);
+    if (!dragging) setHovered(null);
   });
 
   window.addEventListener("orbit:active", (event) => {
@@ -270,6 +367,25 @@ function createOrbitalEnvironment(definitions) {
   ecliptic.position.z = -10;
   group.add(ecliptic);
 
+  const earthOrbitPoints = [];
+  for (let index = 0; index < 192; index += 1) {
+    const angle = index / 192 * Math.PI * 2;
+    earthOrbitPoints.push(new THREE.Vector3(Math.cos(angle), Math.sin(angle), Math.sin(angle)));
+  }
+  const earthOrbit = new THREE.LineLoop(
+    new THREE.BufferGeometry().setFromPoints(earthOrbitPoints),
+    new THREE.LineDashedMaterial({
+      color: 0xffca62,
+      transparent: true,
+      opacity: 0.42,
+      dashSize: 4,
+      gapSize: 4,
+      depthWrite: false,
+    }),
+  );
+  earthOrbit.computeLineDistances();
+  group.add(earthOrbit);
+
   const asteroidRandom = seededRandom(481516);
   const asteroidPositions = [];
   const asteroidColors = [];
@@ -331,6 +447,7 @@ function createOrbitalEnvironment(definitions) {
       line.scale.set(width * spec.radiusX, height * spec.radiusY, spec.depth);
     });
     ecliptic.scale.set(width * 0.43, height * 0.22, 1);
+    earthOrbit.scale.set(width * 0.145, height * 0.078, 16);
     asteroidBelt.scale.set(width * 0.395, height * 0.205, 30);
     depthStars.scale.set(width * 1.04, height * 0.96, 180);
   }
@@ -445,6 +562,29 @@ function createProductWorld(definition, maxAnisotropy) {
   hitTarget.userData.project = definition.key;
   group.add(hitTarget);
 
+  const halo = new THREE.Mesh(
+    new THREE.RingGeometry(definition.size * 1.18, definition.size * 1.24, 128),
+    new THREE.MeshBasicMaterial({
+      color: definition.color,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.34,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    }),
+  );
+  halo.rotation.x = 0.12;
+  group.add(halo);
+
+  const satellitePivot = new THREE.Group();
+  const satellite = new THREE.Mesh(
+    new THREE.SphereGeometry(definition.size * 0.075, 20, 12),
+    new THREE.MeshBasicMaterial({ color: definition.color }),
+  );
+  satellite.position.set(definition.size * 1.62, definition.size * 0.32, definition.size * 0.28);
+  satellitePivot.add(satellite);
+  group.add(satellitePivot);
+
   if (definition.ringed) {
     const ring = new THREE.Mesh(
       new THREE.RingGeometry(definition.size * 1.24, definition.size * 1.74, 128),
@@ -474,7 +614,7 @@ function createProductWorld(definition, maxAnisotropy) {
   glow.renderOrder = -1;
   group.add(glow);
 
-  return { group, surface, glow, hitTarget };
+  return { group, surface, glow, hitTarget, satellitePivot };
 }
 
 function createProceduralPlanetTexture(definition) {

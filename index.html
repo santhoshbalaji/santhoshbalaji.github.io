@@ -20,9 +20,9 @@
     <title>Santhosh Balaji S — Software Developer</title>
     <link rel="icon" href="favicon.svg?v=10" type="image/svg+xml" />
     <link rel="stylesheet" href="theme.css?v=4" />
-    <link rel="stylesheet" href="styles.css?v=43" />
-    <script src="script.js?v=19" defer></script>
-    <script type="module" src="three-universe.js?v=10"></script>
+    <link rel="stylesheet" href="styles.css?v=45" />
+    <script src="script.js?v=20" defer></script>
+    <script type="module" src="three-universe.js?v=12"></script>
     <script src="analytics.js?v=1" defer></script>
   </head>
   <body>
@@ -102,7 +102,13 @@
         </div>
 
         <div class="gravity-stage reveal" id="gravity-stage" data-active-orbit="jurisfield" aria-label="Interactive 3D product orrery with an India-facing Earth at the centre">
-          <canvas class="universe-render" id="universe-render" aria-hidden="true"></canvas>
+          <canvas
+            class="universe-render"
+            id="universe-render"
+            tabindex="0"
+            role="application"
+            aria-label="Interactive 3D product universe. Drag to orbit, scroll to zoom, use arrow keys to rotate, plus and minus to zoom, and R to reset."
+          ></canvas>
           <div class="solar-orbits" aria-hidden="true">
             <span class="ecliptic-disk"></span>
             <i class="solar-orbit orbit-jurisfield" data-orbit-path="jurisfield"></i>
@@ -151,7 +157,7 @@
             <span class="object-logo"><img src="assets/logos/mapsmith.svg" alt="" /></span>
           </a>
 
-          <div class="stage-instruction"><span aria-hidden="true">●</span> Products in live orbit</div>
+          <div class="stage-instruction"><span aria-hidden="true">●</span> Drag to orbit · scroll to zoom · double-click to reset</div>
         </div>
 
       </section>
