@@ -57,6 +57,7 @@ async function initialiseUniverse() {
       radius: 1.35,
       size: 0.21,
       logo: "assets/logos/jurisfield.svg",
+      logoScale: [0.92, 0.92],
       textureStyle: "terrain",
     },
     {
@@ -66,6 +67,7 @@ async function initialiseUniverse() {
       radius: 1.8,
       size: 0.25,
       logo: "assets/logos/atlas.svg",
+      logoScale: [1.32, 1],
       textureStyle: "bands",
       ringed: true,
     },
@@ -76,6 +78,7 @@ async function initialiseUniverse() {
       radius: 2.22,
       size: 0.225,
       logo: "assets/logos/nammatn.svg",
+      logoScale: [0.96, 0.96],
       textureStyle: "craters",
     },
     {
@@ -85,6 +88,7 @@ async function initialiseUniverse() {
       radius: 2.62,
       size: 0.19,
       logo: "assets/logos/mapsmith.svg",
+      logoScale: [0.9, 0.9],
       textureStyle: "grid",
     },
   ];
@@ -99,6 +103,7 @@ async function initialiseUniverse() {
   const pointer = new THREE.Vector2(4, 4);
   const projected = new THREE.Vector3();
   const worldPosition = new THREE.Vector3();
+  const logoFacingPoint = new THREE.Vector3();
   const anchors = new Map(
     [...stage.querySelectorAll("[data-orbit-planet]")].map((anchor) => [anchor.dataset.orbitPlanet, anchor]),
   );
@@ -133,6 +138,8 @@ async function initialiseUniverse() {
   stage.dataset.threeVersion = THREE.REVISION;
   universe.rotation.set(defaultRotationX, defaultRotationY, 0);
   stage.dataset.threeDepth = "product-orbits";
+  stage.dataset.threeOcclusion = "depth-buffered-logos";
+  stage.dataset.threeOrbitBounds = "planet-safe";
   stage.dataset.threeInteraction = "360-product-orbits";
   stage.dataset.portfolioBodies = "earth-jurisfield-atlas-nammatn-mapsmith";
   stage.classList.add("has-three-universe", "has-product-orrery");
@@ -219,6 +226,11 @@ async function initialiseUniverse() {
     products.forEach((product) => {
       const anchor = anchors.get(product.key);
       if (!anchor) return;
+      logoFacingPoint.copy(camera.position);
+      product.group.worldToLocal(logoFacingPoint);
+      logoFacingPoint.normalize();
+      product.logoBackdrop.position.copy(logoFacingPoint).multiplyScalar(product.size * 1.025);
+      product.logoSprite.position.copy(logoFacingPoint).multiplyScalar(product.size * 1.045);
       product.group.getWorldPosition(worldPosition);
       projected.copy(worldPosition).project(camera);
       const perspectiveScale = baseCameraDistance / Math.max(80, camera.position.z - worldPosition.z);
@@ -233,6 +245,7 @@ async function initialiseUniverse() {
       anchor.style.setProperty("--scene-y", `${(-projected.y * stageBounds.height * 0.5).toFixed(2)}px`);
       anchor.style.setProperty("--scene-scale", perspectiveScale.toFixed(3));
       anchor.style.zIndex = String(Math.round(THREE.MathUtils.clamp(11 + worldPosition.z / 28, 6, 16)));
+      anchor.dataset.depthState = occluded ? "behind-earth" : "visible";
       anchor.classList.toggle("is-occluded", occluded);
     });
 
@@ -449,7 +462,7 @@ function createProductUniverse(textureLoader, maxAnisotropy, productDefinitions)
     const orbitLine = createOrbitLine(definition.color, 0.13);
     orbitLine.renderOrder = 1;
     orbitPlane.add(orbitLine);
-    const product = createProductWorld(definition, maxAnisotropy);
+    const product = createProductWorld(definition, textureLoader, maxAnisotropy);
     orbitPlane.add(product.group);
     group.add(orbitPlane);
     return { ...definition, ...product, ...spec, orbitPlane, orbitLine, orbitRadius: 1 };
@@ -480,10 +493,16 @@ function createProductUniverse(textureLoader, maxAnisotropy, productDefinitions)
     const extent = Math.min(width, height);
     const compactScale = extent < 430 ? 0.9 : 1;
     const earthRadius = extent * 0.16 * compactScale;
+    const maximumOrbitRatio = Math.max(...products.map((product) => product.radius));
+    const edgeReserve = THREE.MathUtils.clamp(extent * 0.085, 42, 64);
+    const perspectiveAllowance = 1.04;
+    const horizontalExtent = (width * 0.5 - edgeReserve) / (maximumOrbitRatio * perspectiveAllowance);
+    const verticalExtent = (height * 0.5 - edgeReserve) / (maximumOrbitRatio * perspectiveAllowance);
+    const safeOrbitExtent = Math.max(180, Math.min(horizontalExtent, verticalExtent));
     earth.group.scale.setScalar(earthRadius / 0.52);
     earthGlow.scale.setScalar(earthRadius * 3.35);
     products.forEach((product) => {
-      product.orbitRadius = extent * product.radius;
+      product.orbitRadius = safeOrbitExtent * product.radius;
       product.orbitLine.scale.set(product.orbitRadius, product.orbitRadius * product.ellipse, 1);
     });
     depthField.scale.set(width * 0.94, height * 0.88, 220);
@@ -584,7 +603,7 @@ function createEarth(textureLoader, maxAnisotropy) {
   return { group, mesh, atmosphere };
 }
 
-function createProductWorld(definition, maxAnisotropy) {
+function createProductWorld(definition, textureLoader, maxAnisotropy) {
   const group = new THREE.Group();
   const texture = createProceduralPlanetTexture(definition);
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -601,6 +620,44 @@ function createProductWorld(definition, maxAnisotropy) {
   });
   const surface = new THREE.Mesh(new THREE.SphereGeometry(definition.size, 64, 32), material);
   group.add(surface);
+
+  const logoTexture = definition.key === "atlas"
+    ? createAtlasLogoTexture()
+    : textureLoader.load(definition.logo);
+  logoTexture.colorSpace = THREE.SRGBColorSpace;
+  logoTexture.anisotropy = maxAnisotropy;
+  const logoSprite = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: logoTexture,
+    color: 0xffffff,
+    transparent: true,
+    opacity: 1,
+    alphaTest: 0.035,
+    depthTest: true,
+    depthWrite: false,
+    blending: THREE.NormalBlending,
+    toneMapped: false,
+  }));
+  logoSprite.scale.set(
+    definition.size * definition.logoScale[0],
+    definition.size * definition.logoScale[1],
+    1,
+  );
+  logoSprite.renderOrder = 8;
+  group.add(logoSprite);
+
+  const logoBackdrop = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: createLogoBackdropTexture(),
+    color: 0xffffff,
+    transparent: true,
+    opacity: 0.88,
+    alphaTest: 0.012,
+    depthTest: true,
+    depthWrite: false,
+    toneMapped: false,
+  }));
+  logoBackdrop.scale.setScalar(definition.size * 1.54);
+  logoBackdrop.renderOrder = 7;
+  group.add(logoBackdrop);
 
   const hitTarget = new THREE.Mesh(
     new THREE.SphereGeometry(definition.size * 1.7, 20, 12),
@@ -661,7 +718,7 @@ function createProductWorld(definition, maxAnisotropy) {
   glow.renderOrder = -1;
   group.add(glow);
 
-  return { group, surface, glow, hitTarget, satellitePivot };
+  return { group, surface, glow, hitTarget, satellitePivot, logoBackdrop, logoSprite };
 }
 
 function createProceduralPlanetTexture(definition) {
@@ -730,6 +787,41 @@ function createGlowTexture(colorValue) {
   gradient.addColorStop(1, `rgba(${rgb},0)`);
   context.fillStyle = gradient;
   context.fillRect(0, 0, 256, 256);
+  return new THREE.CanvasTexture(canvasTexture);
+}
+
+function createLogoBackdropTexture() {
+  const canvasTexture = document.createElement("canvas");
+  canvasTexture.width = 256;
+  canvasTexture.height = 256;
+  const context = canvasTexture.getContext("2d");
+  const gradient = context.createRadialGradient(128, 128, 18, 128, 128, 126);
+  gradient.addColorStop(0, "rgba(0,4,12,0.82)");
+  gradient.addColorStop(0.52, "rgba(0,4,12,0.68)");
+  gradient.addColorStop(0.78, "rgba(0,4,12,0.26)");
+  gradient.addColorStop(1, "rgba(0,4,12,0)");
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, 256, 256);
+  return new THREE.CanvasTexture(canvasTexture);
+}
+
+function createAtlasLogoTexture() {
+  const canvasTexture = document.createElement("canvas");
+  canvasTexture.width = 360;
+  canvasTexture.height = 256;
+  const context = canvasTexture.getContext("2d");
+  context.scale(4, 4);
+  context.fillStyle = "#6257ff";
+  [
+    "M8 14.25c0-3.1 2.9-5.35 5.85-4.5l11.35 3.27A5.25 5.25 0 0 1 29 18.05v27.9a5.25 5.25 0 0 1-3.8 5.03l-11.35 3.27C10.9 55.1 8 52.85 8 49.75v-35.5Z",
+    "M31.5 7.15c0-3.3 3.1-5.7 6.25-4.8L53.5 6.9A6.3 6.3 0 0 1 58 12.95v38.1a6.3 6.3 0 0 1-4.5 6.05l-15.75 4.55c-3.15.9-6.25-1.5-6.25-4.8V7.15Z",
+    "M60.5 14.25c0-3.1 2.9-5.35 5.85-4.5l11.35 3.27a5.25 5.25 0 0 1 3.8 5.03v27.9a5.25 5.25 0 0 1-3.8 5.03l-11.35 3.27c-2.95.85-5.85-1.4-5.85-4.5v-35.5Z",
+  ].forEach((path) => context.fill(new Path2D(path)));
+  context.globalCompositeOperation = "destination-out";
+  context.strokeStyle = "#000";
+  context.lineWidth = 4.5;
+  context.lineCap = "round";
+  context.stroke(new Path2D("M4 37c14-11 26-12 41-6 15 6 26 10 41-3"));
   return new THREE.CanvasTexture(canvasTexture);
 }
 
