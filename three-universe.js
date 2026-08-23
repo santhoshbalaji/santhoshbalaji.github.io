@@ -85,6 +85,9 @@ async function initialiseUniverse() {
     },
   ];
 
+  const environment = createOrbitalEnvironment(productDefinitions);
+  universe.add(environment.group);
+
   const products = productDefinitions.map((definition) => {
     const product = createProductWorld(definition, maxAnisotropy);
     universe.add(product.group);
@@ -107,6 +110,7 @@ async function initialiseUniverse() {
 
   stage.dataset.threeState = "ready";
   stage.dataset.threeVersion = THREE.REVISION;
+  stage.dataset.threeDepth = "complete";
   stage.classList.add("has-three-universe");
 
   function resize() {
@@ -118,6 +122,7 @@ async function initialiseUniverse() {
     camera.top = height / 2;
     camera.bottom = height / -2;
     camera.updateProjectionMatrix();
+    environment.resize(width, height);
     render(performance.now(), true);
   }
 
@@ -163,6 +168,7 @@ async function initialiseUniverse() {
       );
       earth.group.scale.setScalar((coreBounds.width / 2) / 0.52);
     }
+    environment.update(elapsed, hoveredProject || activeProject, motionEnabled);
 
     products.forEach((product) => {
       const anchor = anchors.get(product.key);
@@ -171,7 +177,7 @@ async function initialiseUniverse() {
       product.group.position.set(
         anchorBounds.left + anchorBounds.width / 2 - stageBounds.left - stageBounds.width / 2,
         stageBounds.height / 2 - (anchorBounds.top + anchorBounds.height / 2 - stageBounds.top),
-        Number.parseInt(anchor.style.zIndex || "8", 10) * 0.08,
+        environment.depthFor(product.key, Number.parseInt(anchor.style.zIndex || "8", 10)) + 2,
       );
       product.group.scale.setScalar((anchorBounds.width / 2) / product.size);
       product.surface.rotation.y += motionEnabled ? delta * (0.18 + product.radius * 0.018) : 0;
@@ -219,6 +225,135 @@ async function initialiseUniverse() {
   resizeObserver.observe(stage);
   resize();
   render(performance.now(), true);
+}
+
+function createOrbitalEnvironment(definitions) {
+  const group = new THREE.Group();
+  const orbitSpecs = new Map([
+    ["jurisfield", { radiusX: 0.24, radiusY: 0.11, rotation: -4, depth: 18 }],
+    ["atlas", { radiusX: 0.32, radiusY: 0.15, rotation: 2, depth: 24 }],
+    ["nammatn", { radiusX: 0.4, radiusY: 0.19, rotation: -1, depth: 31 }],
+    ["mapsmith", { radiusX: 0.47, radiusY: 0.235, rotation: 4, depth: 39 }],
+  ]);
+  const orbitLines = new Map();
+
+  definitions.forEach((definition) => {
+    const points = [];
+    for (let index = 0; index < 320; index += 1) {
+      const angle = index / 320 * Math.PI * 2;
+      points.push(new THREE.Vector3(Math.cos(angle), Math.sin(angle), Math.sin(angle)));
+    }
+    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+    const material = new THREE.LineBasicMaterial({
+      color: definition.color,
+      transparent: true,
+      opacity: 0.075,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+    const line = new THREE.LineLoop(geometry, material);
+    line.rotation.z = THREE.MathUtils.degToRad(orbitSpecs.get(definition.key).rotation);
+    line.renderOrder = 2;
+    group.add(line);
+    orbitLines.set(definition.key, line);
+  });
+
+  const eclipticMaterial = new THREE.MeshBasicMaterial({
+    color: 0x5545be,
+    transparent: true,
+    opacity: 0.035,
+    blending: THREE.AdditiveBlending,
+    side: THREE.DoubleSide,
+    depthWrite: false,
+  });
+  const ecliptic = new THREE.Mesh(new THREE.RingGeometry(0.22, 1, 192), eclipticMaterial);
+  ecliptic.position.z = -10;
+  group.add(ecliptic);
+
+  const asteroidRandom = seededRandom(481516);
+  const asteroidPositions = [];
+  const asteroidColors = [];
+  for (let index = 0; index < 640; index += 1) {
+    const angle = asteroidRandom() * Math.PI * 2;
+    const spread = 0.88 + asteroidRandom() * 0.24;
+    asteroidPositions.push(
+      Math.cos(angle) * spread,
+      Math.sin(angle) * spread,
+      Math.sin(angle) * 0.72 + (asteroidRandom() - 0.5) * 0.28,
+    );
+    const bright = 0.46 + asteroidRandom() * 0.38;
+    asteroidColors.push(bright * 0.77, bright * 0.81, bright);
+  }
+  const asteroidGeometry = new THREE.BufferGeometry();
+  asteroidGeometry.setAttribute("position", new THREE.Float32BufferAttribute(asteroidPositions, 3));
+  asteroidGeometry.setAttribute("color", new THREE.Float32BufferAttribute(asteroidColors, 3));
+  const asteroidBelt = new THREE.Points(
+    asteroidGeometry,
+    new THREE.PointsMaterial({
+      size: 1.15,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.42,
+      sizeAttenuation: false,
+      depthWrite: false,
+    }),
+  );
+  asteroidBelt.rotation.z = THREE.MathUtils.degToRad(-2);
+  group.add(asteroidBelt);
+
+  const depthRandom = seededRandom(20260824);
+  const starPositions = [];
+  const starColors = [];
+  for (let index = 0; index < 260; index += 1) {
+    starPositions.push(depthRandom() - 0.5, depthRandom() - 0.5, -0.35 - depthRandom() * 0.65);
+    const warmth = depthRandom();
+    starColors.push(warmth > 0.92 ? 1 : 0.68, warmth > 0.92 ? 0.8 : 0.78, warmth > 0.92 ? 0.5 : 1);
+  }
+  const starGeometry = new THREE.BufferGeometry();
+  starGeometry.setAttribute("position", new THREE.Float32BufferAttribute(starPositions, 3));
+  starGeometry.setAttribute("color", new THREE.Float32BufferAttribute(starColors, 3));
+  const depthStars = new THREE.Points(
+    starGeometry,
+    new THREE.PointsMaterial({
+      size: 1.05,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.34,
+      sizeAttenuation: false,
+      depthWrite: false,
+    }),
+  );
+  group.add(depthStars);
+
+  function resize(width, height) {
+    orbitLines.forEach((line, key) => {
+      const spec = orbitSpecs.get(key);
+      line.scale.set(width * spec.radiusX, height * spec.radiusY, spec.depth);
+    });
+    ecliptic.scale.set(width * 0.43, height * 0.22, 1);
+    asteroidBelt.scale.set(width * 0.395, height * 0.205, 30);
+    depthStars.scale.set(width * 1.04, height * 0.96, 180);
+  }
+
+  function update(elapsed, activeProject, motionEnabled) {
+    orbitLines.forEach((line, key) => {
+      const targetOpacity = key === activeProject ? 0.34 : 0.075;
+      line.material.opacity += (targetOpacity - line.material.opacity) * 0.075;
+    });
+    ecliptic.material.opacity = 0.03 + Math.sin(elapsed * 0.34) * 0.006;
+    if (motionEnabled) {
+      asteroidBelt.rotation.z += 0.000035;
+      depthStars.rotation.z -= 0.000006;
+    }
+  }
+
+  function depthFor(key, zIndex) {
+    const spec = orbitSpecs.get(key);
+    const normalizedDepth = THREE.MathUtils.clamp((zIndex - 6) / 8, 0, 1);
+    return (normalizedDepth * 2 - 1) * spec.depth;
+  }
+
+  return { group, resize, update, depthFor };
 }
 
 function createEarth(textureLoader, maxAnisotropy) {
