@@ -190,6 +190,9 @@ img { display: block; max-width: 100%; }
 .has-three-universe .system-object .object-logo img { width: 100%; height: 100%; filter: drop-shadow(0 0 .45rem color-mix(in srgb,var(--object-accent) 44%,transparent)); }
 .has-three-universe::before { opacity: .24; }
 .has-three-universe::after { filter: blur(3.8rem); }
+.has-actual-solar-system .gravity-core { display: none; }
+.has-actual-solar-system .system-object { --planet-size: 1.25rem; }
+.has-actual-solar-system .system-object .object-logo { width: 56%; height: 56%; }
 
 .solar-orbits { position: absolute; inset: 0; z-index: 1; overflow: visible; pointer-events: none; transform: translateZ(0); transform-style: preserve-3d; transition: opacity 320ms ease, filter 320ms ease; }
 .ecliptic-disk { position: absolute; top: 50%; left: 50%; width: 96%; height: 35%; border-radius: 50%; background: radial-gradient(ellipse, color-mix(in srgb, var(--signal-blue) 9%, transparent), color-mix(in srgb, var(--ultraviolet) 4%, transparent) 48%, transparent 72%); box-shadow: inset 0 0 2.8rem color-mix(in srgb, var(--active-orbit-accent) 5%, transparent); filter: blur(0.7rem); transform: translate(-50%, -50%) rotate(2deg); transition: box-shadow var(--duration-flight) ease; }
@@ -237,6 +240,9 @@ img { display: block; max-width: 100%; }
 .orbit-readout-project small { color: var(--active-orbit-accent); font: 560 0.4rem var(--font-orbit); text-transform: uppercase; transition: color 360ms ease; }
 .orbit-readout > p:not(.orbit-readout-status) { margin: 0.52rem 0 0; color: var(--moonlight); font-size: 0.56rem; line-height: 1.5; }
 .orbit-readout-hint { display: none; }
+.solar-model-note { position: absolute; top: 4%; right: 2%; z-index: 17; display: flex; margin: 0; align-items: flex-end; flex-direction: column; color: var(--moonlight); font: 590 .38rem var(--font-orbit); letter-spacing: .06em; text-align: right; text-transform: uppercase; pointer-events: none; }
+.solar-model-note::before { width: 1.6rem; height: 1px; margin-bottom: .45rem; content: ""; background: linear-gradient(90deg,transparent,var(--solar)); }
+.solar-model-note small { display: block; margin-top: .25rem; color: var(--dust); font: inherit; font-size: .31rem; letter-spacing: .035em; }
 
 .system-object {
   --object-accent: var(--signal-blue);
@@ -502,6 +508,7 @@ img { display: block; max-width: 100%; }
   .gravity-stage { justify-self: end; width: min(100%,31rem); margin-top: 0; }
   .orbit-readout { top: 2%; left: 1%; width: min(10rem,41%); }
   .orbit-readout > p:not(.orbit-readout-status) { display: none; }
+  .solar-model-note { top: 2%; right: 1%; }
   .section-heading { grid-template-columns: minmax(13rem,.45fr) minmax(0,1.55fr); }
   .section-heading-copy { align-items: flex-start; flex-direction: column; gap: 1rem; }
   .mission-explorer { grid-template-columns: minmax(14rem,.52fr) minmax(0,1.48fr); }
@@ -579,6 +586,8 @@ img { display: block; max-width: 100%; }
   .orbit-readout-project b { font-size: .58rem; }
   .orbit-readout-project small { font-size: .33rem; }
   .orbit-readout > p:not(.orbit-readout-status), .orbit-readout-hint { display: none; }
+  .solar-model-note { top: 1%; max-width: 8.5rem; }
+  .solar-model-note small { display: none; }
   .object-jurisfield { --planet-size: 3rem; }
   .object-atlas { --planet-size: 3.35rem; }
   .object-nammatn { --planet-size: 3.1rem; }
