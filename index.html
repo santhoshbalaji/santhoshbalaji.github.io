@@ -20,7 +20,7 @@
     <title>Santhosh Balaji S — Software Developer</title>
     <link rel="icon" href="favicon.svg?v=10" type="image/svg+xml" />
     <link rel="stylesheet" href="theme.css?v=4" />
-    <link rel="stylesheet" href="styles.css?v=56" />
+    <link rel="stylesheet" href="styles.css?v=57" />
     <script type="module" src="three-universe.js?v=29"></script>
     <script src="script.js?v=21" defer></script>
     <script src="analytics.js?v=1" defer></script>
@@ -233,7 +233,10 @@
             <article class="mission-panel is-active" id="jurisfield" role="tabpanel" aria-labelledby="tab-jurisfield" data-panel="jurisfield">
               <p class="mission-kicker">Geospatial field operations</p>
               <h3>Evidence that stays trustworthy from the field to the office.</h3>
-              <p>Offline geometry, photos, signatures, and audit-ready evidence across web and mobile.</p>
+              <div class="mission-summary">
+                <p>Offline geometry, photos, signatures, and audit-ready evidence across web and mobile.</p>
+                <a class="mission-link" href="https://jurisfield.com/" target="_blank" rel="noreferrer">Visit JurisField <span>↗</span></a>
+              </div>
               <dl>
                 <div><dt>Role</dt><dd>Product design · full-stack engineering · deployment</dd></div>
                 <div><dt>Stack</dt><dd>Angular · Go · PostGIS · MapLibre · SwiftUI · Kotlin</dd></div>
@@ -243,29 +246,35 @@
             <article class="mission-panel" id="atlas" role="tabpanel" aria-labelledby="tab-atlas" data-panel="atlas" hidden>
               <p class="mission-kicker">AI-assisted creative tooling</p>
               <h3>A video workflow where every AI step can be inspected.</h3>
-              <p>Research, scripting, media planning, narration, rendering, and publishing in one recoverable workflow.</p>
+              <div class="mission-summary">
+                <p>Research, scripting, media planning, narration, rendering, and publishing in one recoverable workflow.</p>
+                <a class="mission-link" href="https://atlas.santhoshbalaji.cloud/" target="_blank" rel="noreferrer">Visit Atlas <span>↗</span></a>
+              </div>
               <dl>
                 <div><dt>Role</dt><dd>Product architecture · full-stack engineering · media pipeline</dd></div>
                 <div><dt>Stack</dt><dd>Angular · Go · Python · PostgreSQL · MinIO · FFmpeg</dd></div>
               </dl>
-              <a class="mission-link" href="https://atlas.santhoshbalaji.cloud/" target="_blank" rel="noreferrer">Visit Atlas <span>↗</span></a>
             </article>
 
             <article class="mission-panel" id="nammatn" role="tabpanel" aria-labelledby="tab-nammatn" data-panel="nammatn" hidden>
               <p class="mission-kicker">Independent civic technology</p>
               <h3>A public trail from a citizen’s report to visible follow-through.</h3>
-              <p>Bilingual local reporting, community verification, jurisdiction-aware routing, and transparent tracking.</p>
+              <div class="mission-summary">
+                <p>Bilingual local reporting, community verification, jurisdiction-aware routing, and transparent tracking.</p>
+                <a class="mission-link" href="https://nammatn.in/" target="_blank" rel="noreferrer">Visit NammaTN <span>↗</span></a>
+              </div>
               <dl>
                 <div><dt>Role</dt><dd>Founder · product direction · full-stack engineering</dd></div>
                 <div><dt>Stack</dt><dd>Angular · Go · PostgreSQL · PostGIS · D3 Geo · Docker</dd></div>
               </dl>
-              <a class="mission-link" href="https://nammatn.in/" target="_blank" rel="noreferrer">Visit NammaTN <span>↗</span></a>
             </article>
 
             <article class="mission-panel" id="mapsmith" role="tabpanel" aria-labelledby="tab-mapsmith" data-panel="mapsmith" hidden>
               <p class="mission-kicker">Geospatial infrastructure</p>
               <h3>Self-hosted GIS with a programmable core.</h3>
-              <p>Publish spatial data, author maps, run analysis, and automate through APIs and a CLI.</p>
+              <div class="mission-summary">
+                <p>Publish spatial data, author maps, run analysis, and automate through APIs and a CLI.</p>
+              </div>
               <dl>
                 <div><dt>Role</dt><dd>Product architecture · full-stack engineering · platform operations</dd></div>
                 <div><dt>Stack</dt><dd>Angular · Go · PostGIS · MapLibre · Keycloak · Docker</dd></div>
@@ -317,24 +326,31 @@
       </section>
 
       <section class="contact-section" id="contact" aria-labelledby="contact-title">
-        <div class="transmission-visual" aria-hidden="true">
-          <span class="transmission-core"></span>
-          <i></i><i></i><i></i>
-          <b>SB</b>
-        </div>
         <div class="contact-content reveal">
-          <p class="section-label">Deep-space transmission</p>
-          <h2 id="contact-title">Let’s build something useful.</h2>
-          <p>Open to thoughtful product work and civic-technology collaboration.</p>
-          <a class="contact-email" href="mailto:contact@santhoshbalaji.cloud">
-            Start a conversation <span>↗</span>
-          </a>
-          <small>contact@santhoshbalaji.cloud</small>
-          <nav class="social-links" aria-label="Social profiles">
-            <a href="https://x.com/SanthoshBala_S" target="_blank" rel="me noreferrer" aria-label="Santhosh Balaji S on X">X <span aria-hidden="true">↗</span></a>
-            <a href="https://linkedin.com/in/santhoshbalajis" target="_blank" rel="me noreferrer" aria-label="Santhosh Balaji S on LinkedIn">LinkedIn <span aria-hidden="true">↗</span></a>
-            <a href="https://github.com/santhoshbalaji" target="_blank" rel="me noreferrer" aria-label="Santhosh Balaji S on GitHub">GitHub <span aria-hidden="true">↗</span></a>
-          </nav>
+          <div class="contact-copy">
+            <p class="section-label">Open channel / Chennai</p>
+            <h2 id="contact-title">Let’s build something useful.</h2>
+            <p>Open to thoughtful product work and civic-technology collaboration.</p>
+          </div>
+
+          <div class="contact-console">
+            <div class="contact-status">
+              <span><i aria-hidden="true"></i> Channel open</span>
+              <small>Chennai · Earth</small>
+            </div>
+            <a class="contact-email" href="mailto:contact@santhoshbalaji.cloud">
+              <span>
+                <small>Primary transmission</small>
+                <strong>contact@santhoshbalaji.cloud</strong>
+              </span>
+              <b aria-hidden="true">↗</b>
+            </a>
+            <nav class="social-links" aria-label="Social profiles">
+              <a href="https://x.com/SanthoshBala_S" target="_blank" rel="me noreferrer" aria-label="Santhosh Balaji S on X">X <span aria-hidden="true">↗</span></a>
+              <a href="https://linkedin.com/in/santhoshbalajis" target="_blank" rel="me noreferrer" aria-label="Santhosh Balaji S on LinkedIn">LinkedIn <span aria-hidden="true">↗</span></a>
+              <a href="https://github.com/santhoshbalaji" target="_blank" rel="me noreferrer" aria-label="Santhosh Balaji S on GitHub">GitHub <span aria-hidden="true">↗</span></a>
+            </nav>
+          </div>
         </div>
       </section>
     </main>
