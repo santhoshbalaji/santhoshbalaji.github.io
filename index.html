@@ -20,9 +20,9 @@
     <title>Santhosh Balaji S — Software Developer</title>
     <link rel="icon" href="favicon.svg?v=10" type="image/svg+xml" />
     <link rel="stylesheet" href="theme.css?v=4" />
-    <link rel="stylesheet" href="styles.css?v=46" />
+    <link rel="stylesheet" href="styles.css?v=47" />
     <script src="script.js?v=20" defer></script>
-    <script type="module" src="three-universe.js?v=13"></script>
+    <script type="module" src="three-universe.js?v=14"></script>
     <script src="analytics.js?v=1" defer></script>
   </head>
   <body>
@@ -157,7 +157,11 @@
             <span class="object-logo"><img src="assets/logos/mapsmith.svg" alt="" /></span>
           </a>
 
-          <div class="stage-instruction"><span aria-hidden="true">●</span> Drag 360° · scroll or pinch to zoom · double-click to reset</div>
+          <div class="stage-controls" aria-label="Universe controls">
+            <span class="stage-control"><i aria-hidden="true">↻</i> Drag 360°</span>
+            <span class="stage-control stage-control-zoom"><i aria-hidden="true">±</i> Pinch / scroll</span>
+            <button class="stage-reset" id="universe-reset" type="button">Reset <span aria-hidden="true">↺</span></button>
+          </div>
         </div>
 
       </section>

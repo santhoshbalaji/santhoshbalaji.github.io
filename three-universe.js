@@ -18,7 +18,14 @@ async function initialiseUniverse() {
     antialias: true,
     powerPreference: "high-performance",
   });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  let rendererPixelRatio = 0;
+  function syncPixelRatio() {
+    const nextPixelRatio = Math.min(window.devicePixelRatio || 1, window.innerWidth < 640 ? 1.5 : 2);
+    if (nextPixelRatio === rendererPixelRatio) return;
+    rendererPixelRatio = nextPixelRatio;
+    renderer.setPixelRatio(rendererPixelRatio);
+  }
+  syncPixelRatio();
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.24;
@@ -104,6 +111,7 @@ async function initialiseUniverse() {
     [...stage.querySelectorAll("[data-orbit-planet]")].map((anchor) => [anchor.dataset.orbitPlanet, anchor]),
   );
   const gravityCore = stage.querySelector(".gravity-core");
+  const resetButton = stage.querySelector("#universe-reset");
   let activeProject = stage.dataset.activeOrbit || "jurisfield";
   let hoveredProject = null;
   let motionEnabled = document.documentElement.dataset.motion !== "paused"
@@ -125,6 +133,7 @@ async function initialiseUniverse() {
   let pinchStartDistance = 0;
   let pinchStartZoom = 1;
   let pinching = false;
+  let sceneVisible = true;
   const activePointers = new Map();
 
   stage.dataset.threeState = "ready";
@@ -134,6 +143,7 @@ async function initialiseUniverse() {
   stage.classList.add("has-three-universe");
 
   function resize() {
+    syncPixelRatio();
     const width = Math.max(1, stage.clientWidth);
     const height = Math.max(1, stage.clientHeight);
     renderer.setSize(width, height, false);
@@ -241,6 +251,7 @@ async function initialiseUniverse() {
       anchor.style.setProperty("--scene-x", `${(projected.x * stageBounds.width * 0.5).toFixed(2)}px`);
       anchor.style.setProperty("--scene-y", `${(-projected.y * stageBounds.height * 0.5).toFixed(2)}px`);
       anchor.style.setProperty("--scene-scale", (orbitScale * perspectiveScale).toFixed(3));
+      anchor.style.zIndex = String(Math.round(THREE.MathUtils.clamp(11 + worldPosition.z / 28, 6, 16)));
       anchor.classList.toggle("is-occluded", occluded);
     });
 
@@ -250,7 +261,18 @@ async function initialiseUniverse() {
       || Math.abs(targetZoom - currentZoom) > 0.0005
       || Math.abs(angularVelocityX) > 0.00002
       || Math.abs(angularVelocityY) > 0.00002;
-    if (motionEnabled || dragging || force || unsettled) animationFrame = window.requestAnimationFrame(render);
+    if (sceneVisible && (motionEnabled || dragging || force || unsettled)) {
+      animationFrame = window.requestAnimationFrame(render);
+    }
+  }
+
+  function resetView() {
+    targetRotationX = 0;
+    targetRotationY = 0;
+    targetZoom = 1;
+    angularVelocityX = 0;
+    angularVelocityY = 0;
+    render(performance.now(), true);
   }
 
   canvas.addEventListener("pointermove", (event) => {
@@ -347,14 +369,8 @@ async function initialiseUniverse() {
     render(performance.now(), true);
   }, { passive: false });
 
-  canvas.addEventListener("dblclick", () => {
-    targetRotationX = 0;
-    targetRotationY = 0;
-    targetZoom = 1;
-    angularVelocityX = 0;
-    angularVelocityY = 0;
-    render(performance.now(), true);
-  });
+  canvas.addEventListener("dblclick", resetView);
+  resetButton?.addEventListener("click", resetView);
 
   canvas.addEventListener("keydown", (event) => {
     const key = event.key.toLowerCase();
@@ -368,11 +384,8 @@ async function initialiseUniverse() {
     if (["+", "="].includes(key)) targetZoom = THREE.MathUtils.clamp(targetZoom - 0.085, 0.72, 1.48);
     if (["-", "_"].includes(key)) targetZoom = THREE.MathUtils.clamp(targetZoom + 0.085, 0.72, 1.48);
     if (["r", "0"].includes(key)) {
-      targetRotationX = 0;
-      targetRotationY = 0;
-      targetZoom = 1;
-      angularVelocityX = 0;
-      angularVelocityY = 0;
+      resetView();
+      return;
     }
     render(performance.now(), true);
   });
@@ -394,11 +407,26 @@ async function initialiseUniverse() {
   });
 
   document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      window.cancelAnimationFrame(animationFrame);
+      return;
+    }
     if (!document.hidden) {
       lastFrame = performance.now();
       render(lastFrame, true);
     }
   });
+
+  const visibilityObserver = new IntersectionObserver(([entry]) => {
+    sceneVisible = entry.isIntersecting;
+    if (!sceneVisible) {
+      window.cancelAnimationFrame(animationFrame);
+      return;
+    }
+    lastFrame = performance.now();
+    render(lastFrame, true);
+  }, { threshold: 0.02 });
+  visibilityObserver.observe(stage);
 
   const resizeObserver = new ResizeObserver(resize);
   resizeObserver.observe(stage);
