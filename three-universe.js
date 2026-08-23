@@ -10,6 +10,7 @@ if (stage && canvas) {
     stage.classList.remove("has-three-universe", "has-product-orrery");
     stage.dataset.threeState = "fallback";
     canvas.hidden = true;
+    window.dispatchEvent(new CustomEvent("universe:fallback"));
     console.warn("3D universe unavailable; using the accessible CSS fallback.", error);
   });
 }
@@ -159,7 +160,7 @@ async function initialiseUniverse() {
   stage.dataset.threeAdaptiveFit = "rotation-safe";
   stage.dataset.threeOrbitVisibility = "persistent-traces";
   stage.dataset.threeLighting = "single-sun-physical";
-  stage.dataset.threeSurfaces = "terrain-roughness-atmosphere";
+  stage.dataset.threeSurfaces = "precomputed-terrain-roughness-atmosphere";
   stage.dataset.threeInteraction = "360-product-orbits";
   stage.dataset.threeLogoTreatment = "camera-facing-product-plates";
   stage.dataset.threeLogoFit = "asset-specific-optical";
@@ -672,17 +673,27 @@ function createEarth(textureLoader, maxAnisotropy, sunDirection) {
   group.add(mesh);
 
   // NASA Blue Marble Next Generation, cloud-free December 2004 surface.
-  textureLoader.load("assets/earth-cloudless-surface.jpg", (texture) => {
-    texture.colorSpace = THREE.SRGBColorSpace;
-    texture.anisotropy = maxAnisotropy;
-    texture.wrapS = THREE.RepeatWrapping;
-    texture.offset.x = 0.469;
-    material.map = texture;
-    const surfaceMaps = createEarthSurfaceMaps(texture, maxAnisotropy);
-    material.roughnessMap = surfaceMaps.roughnessMap;
-    material.bumpMap = surfaceMaps.bumpMap;
-    material.needsUpdate = true;
-  });
+  const colorMap = loadSurfaceTexture(
+    textureLoader,
+    "assets/textures/earth-color.webp",
+    maxAnisotropy,
+    { color: true, offsetX: 0.469 },
+  );
+  const bumpMap = loadSurfaceTexture(
+    textureLoader,
+    "assets/textures/earth-bump.webp",
+    maxAnisotropy,
+    { offsetX: 0.469 },
+  );
+  const roughnessMap = loadSurfaceTexture(
+    textureLoader,
+    "assets/textures/earth-roughness.webp",
+    maxAnisotropy,
+    { offsetX: 0.469 },
+  );
+  material.map = colorMap;
+  material.bumpMap = bumpMap;
+  material.roughnessMap = roughnessMap;
 
   const atmosphere = createAtmosphere(0.552, 0x4f8cff, 0.34, sunDirection);
   group.add(atmosphere);
@@ -732,7 +743,7 @@ function createAtmosphere(radius, color, strength, sunDirection) {
 
 function createProductWorld(definition, textureLoader, maxAnisotropy, sunDirection) {
   const group = new THREE.Group();
-  const maps = createProceduralPlanetMaps(definition, maxAnisotropy);
+  const maps = loadProductPlanetMaps(definition, textureLoader, maxAnisotropy);
   const material = new THREE.MeshPhysicalMaterial({
     map: maps.colorMap,
     bumpMap: maps.bumpMap,
@@ -868,201 +879,28 @@ function createProductWorld(definition, textureLoader, maxAnisotropy, sunDirecti
   };
 }
 
-function createProceduralPlanetMaps(definition, maxAnisotropy) {
-  const width = 640;
-  const height = 320;
-  const colorCanvas = document.createElement("canvas");
-  const bumpCanvas = document.createElement("canvas");
-  const roughnessCanvas = document.createElement("canvas");
-  [colorCanvas, bumpCanvas, roughnessCanvas].forEach((mapCanvas) => {
-    mapCanvas.width = width;
-    mapCanvas.height = height;
-  });
-  const colorContext = colorCanvas.getContext("2d");
-  const bumpContext = bumpCanvas.getContext("2d");
-  const roughnessContext = roughnessCanvas.getContext("2d");
-  const colorData = colorContext.createImageData(width, height);
-  const bumpData = bumpContext.createImageData(width, height);
-  const roughnessData = roughnessContext.createImageData(width, height);
-  const phase = (hashString(definition.key) % 10000) * 0.001;
-  const random = seededRandom(hashString(`${definition.key}-craters`));
-  const craters = definition.textureStyle === "craters"
-    ? Array.from({ length: 18 }, () => {
-      const longitude = random() * Math.PI * 2;
-      const latitude = Math.asin(random() * 2 - 1);
-      const latitudeRadius = Math.cos(latitude);
-      return {
-        x: Math.cos(longitude) * latitudeRadius,
-        y: Math.sin(latitude),
-        z: Math.sin(longitude) * latitudeRadius,
-        radius: 0.035 + random() * 0.09,
-      };
-    })
-    : [];
-  const palettes = {
-    terrain: [[5, 11, 7], [19, 33, 17], [60, 70, 34], [139, 135, 91]],
-    bands: [[4, 5, 18], [18, 16, 50], [51, 45, 99], [104, 91, 148]],
-    craters: [[19, 5, 4], [61, 17, 13], [120, 45, 27], [178, 105, 69]],
-    grid: [[2, 13, 18], [3, 35, 44], [19, 62, 54], [104, 124, 94]],
-  };
-  const palette = palettes[definition.textureStyle];
-
-  for (let y = 0; y < height; y += 1) {
-    const latitude = (0.5 - (y + 0.5) / height) * Math.PI;
-    const latitudeRadius = Math.cos(latitude);
-    const sphereY = Math.sin(latitude);
-    for (let x = 0; x < width; x += 1) {
-      const longitude = (x + 0.5) / width * Math.PI * 2;
-      const sphereX = Math.cos(longitude) * latitudeRadius;
-      const sphereZ = Math.sin(longitude) * latitudeRadius;
-      const macro = sphericalFbm(sphereX, sphereY, sphereZ, phase);
-      const detail = sphericalFbm(sphereX, sphereY, sphereZ, phase + 7.31);
-      const ridge = 1 - Math.abs(detail * 2 - 1);
-      let elevation = 0.5;
-      let palettePosition = macro;
-      let roughness = 0.78;
-
-      if (definition.textureStyle === "terrain") {
-        elevation = 0.16 + macro * 0.64 + ridge * 0.16;
-        palettePosition = THREE.MathUtils.clamp(macro * 0.82 + ridge * 0.18, 0, 1);
-        roughness = 0.72 + detail * 0.22;
-      } else if (definition.textureStyle === "bands") {
-        const band = 0.5 + Math.sin(latitude * 31 + macro * 4.4 + Math.sin(longitude * 2) * 0.8) * 0.27
-          + Math.sin(latitude * 67 - detail * 3.1) * 0.09;
-        elevation = 0.44 + band * 0.08 + detail * 0.035;
-        palettePosition = THREE.MathUtils.clamp(band * 0.74 + macro * 0.2, 0, 1);
-        roughness = 0.68 + detail * 0.18;
-      } else if (definition.textureStyle === "craters") {
-        elevation = 0.2 + macro * 0.58 + ridge * 0.12;
-        palettePosition = macro * 0.78 + ridge * 0.16;
-        for (const crater of craters) {
-          const distance = Math.sqrt(Math.max(0, 2 - 2 * (
-            sphereX * crater.x + sphereY * crater.y + sphereZ * crater.z
-          )));
-          if (distance >= crater.radius) continue;
-          const normalized = distance / crater.radius;
-          const bowl = 1 - normalized;
-          const rim = Math.exp(-Math.pow((normalized - 0.78) / 0.11, 2));
-          elevation += rim * 0.18 - bowl * 0.24;
-          palettePosition -= bowl * 0.1;
-        }
-        roughness = 0.82 + detail * 0.16;
-      } else {
-        const land = macro > 0.53;
-        elevation = land ? 0.54 + (macro - 0.53) * 0.9 + ridge * 0.08 : 0.29 + macro * 0.22;
-        palettePosition = land ? 0.58 + (macro - 0.53) * 0.82 : macro * 0.7;
-        roughness = land ? 0.76 + detail * 0.18 : 0.22 + detail * 0.12;
-      }
-
-      elevation = THREE.MathUtils.clamp(elevation, 0, 1);
-      palettePosition = THREE.MathUtils.clamp(palettePosition, 0, 1);
-      roughness = THREE.MathUtils.clamp(roughness, 0.08, 1);
-      const sampledColor = samplePlanetPalette(palette, palettePosition);
-      const mineralVariation = 0.82 + detail * 0.26;
-      const pixelIndex = (y * width + x) * 4;
-      colorData.data[pixelIndex] = Math.round(THREE.MathUtils.clamp(sampledColor[0] * mineralVariation, 0, 255));
-      colorData.data[pixelIndex + 1] = Math.round(THREE.MathUtils.clamp(sampledColor[1] * mineralVariation, 0, 255));
-      colorData.data[pixelIndex + 2] = Math.round(THREE.MathUtils.clamp(sampledColor[2] * mineralVariation, 0, 255));
-      colorData.data[pixelIndex + 3] = 255;
-      const heightValue = Math.round(elevation * 255);
-      const roughnessValue = Math.round(roughness * 255);
-      bumpData.data[pixelIndex] = heightValue;
-      bumpData.data[pixelIndex + 1] = heightValue;
-      bumpData.data[pixelIndex + 2] = heightValue;
-      bumpData.data[pixelIndex + 3] = 255;
-      roughnessData.data[pixelIndex] = roughnessValue;
-      roughnessData.data[pixelIndex + 1] = roughnessValue;
-      roughnessData.data[pixelIndex + 2] = roughnessValue;
-      roughnessData.data[pixelIndex + 3] = 255;
-    }
-  }
-
-  colorContext.putImageData(colorData, 0, 0);
-  bumpContext.putImageData(bumpData, 0, 0);
-  roughnessContext.putImageData(roughnessData, 0, 0);
-  const colorMap = new THREE.CanvasTexture(colorCanvas);
-  const bumpMap = new THREE.CanvasTexture(bumpCanvas);
-  const roughnessMap = new THREE.CanvasTexture(roughnessCanvas);
-  colorMap.colorSpace = THREE.SRGBColorSpace;
-  [colorMap, bumpMap, roughnessMap].forEach((texture) => {
-    texture.wrapS = THREE.RepeatWrapping;
-    texture.anisotropy = maxAnisotropy;
-  });
-  return { colorMap, bumpMap, roughnessMap };
+function loadSurfaceTexture(textureLoader, url, maxAnisotropy, options = {}) {
+  const texture = textureLoader.load(url);
+  texture.anisotropy = maxAnisotropy;
+  texture.wrapS = THREE.RepeatWrapping;
+  if (options.color) texture.colorSpace = THREE.SRGBColorSpace;
+  if (options.offsetX) texture.offset.x = options.offsetX;
+  return texture;
 }
 
-function sphericalFbm(x, y, z, phase) {
-  let amplitude = 0.56;
-  let frequency = 1.34;
-  let total = 0;
-  let normalization = 0;
-  for (let octave = 0; octave < 5; octave += 1) {
-    const waveA = Math.sin((x * 1.31 + y * 1.87 - z * 0.73) * frequency + phase
-      + Math.sin((z * 1.43 + y * 0.57) * frequency));
-    const waveB = Math.cos((z * 1.17 - x * 0.83 + y * 1.41) * frequency - phase * 0.71
-      + Math.sin(x * frequency * 0.91));
-    total += (waveA * 0.62 + waveB * 0.38) * amplitude;
-    normalization += amplitude;
-    amplitude *= 0.5;
-    frequency *= 2.03;
-  }
-  return THREE.MathUtils.clamp(0.5 + total / normalization * 0.5, 0, 1);
-}
-
-function samplePlanetPalette(palette, position) {
-  const scaled = THREE.MathUtils.clamp(position, 0, 1) * (palette.length - 1);
-  const index = Math.min(palette.length - 2, Math.floor(scaled));
-  const mix = scaled - index;
-  return palette[index].map((channel, channelIndex) => (
-    channel + (palette[index + 1][channelIndex] - channel) * mix
-  ));
-}
-
-function createEarthSurfaceMaps(dayTexture, maxAnisotropy) {
-  const source = dayTexture.image;
-  const width = Math.min(1024, source.naturalWidth || source.width || 1024);
-  const height = Math.round(width * ((source.naturalHeight || source.height || 512) / (source.naturalWidth || source.width || 1024)));
-  const sourceCanvas = document.createElement("canvas");
-  const bumpCanvas = document.createElement("canvas");
-  const roughnessCanvas = document.createElement("canvas");
-  [sourceCanvas, bumpCanvas, roughnessCanvas].forEach((mapCanvas) => {
-    mapCanvas.width = width;
-    mapCanvas.height = height;
-  });
-  const sourceContext = sourceCanvas.getContext("2d", { willReadFrequently: true });
-  sourceContext.drawImage(source, 0, 0, width, height);
-  const sourceData = sourceContext.getImageData(0, 0, width, height).data;
-  const bumpContext = bumpCanvas.getContext("2d");
-  const roughnessContext = roughnessCanvas.getContext("2d");
-  const bumpData = bumpContext.createImageData(width, height);
-  const roughnessData = roughnessContext.createImageData(width, height);
-  for (let pixelIndex = 0; pixelIndex < sourceData.length; pixelIndex += 4) {
-    const red = sourceData[pixelIndex];
-    const green = sourceData[pixelIndex + 1];
-    const blue = sourceData[pixelIndex + 2];
-    const luminance = red * 0.2126 + green * 0.7152 + blue * 0.0722;
-    const ocean = blue > red * 1.08 && blue > green * 0.82;
-    const bump = ocean ? 70 : THREE.MathUtils.clamp(108 + luminance * 0.43, 105, 205);
-    const roughness = ocean ? 48 : THREE.MathUtils.clamp(176 + luminance * 0.22, 176, 232);
-    bumpData.data[pixelIndex] = bump;
-    bumpData.data[pixelIndex + 1] = bump;
-    bumpData.data[pixelIndex + 2] = bump;
-    bumpData.data[pixelIndex + 3] = 255;
-    roughnessData.data[pixelIndex] = roughness;
-    roughnessData.data[pixelIndex + 1] = roughness;
-    roughnessData.data[pixelIndex + 2] = roughness;
-    roughnessData.data[pixelIndex + 3] = 255;
-  }
-  bumpContext.putImageData(bumpData, 0, 0);
-  roughnessContext.putImageData(roughnessData, 0, 0);
-  const bumpMap = new THREE.CanvasTexture(bumpCanvas);
-  const roughnessMap = new THREE.CanvasTexture(roughnessCanvas);
-  [bumpMap, roughnessMap].forEach((texture) => {
-    texture.wrapS = THREE.RepeatWrapping;
-    texture.offset.x = 0.469;
-    texture.anisotropy = maxAnisotropy;
-  });
-  return { bumpMap, roughnessMap };
+function loadProductPlanetMaps(definition, textureLoader, maxAnisotropy) {
+  const colorMap = loadSurfaceTexture(
+    textureLoader,
+    `assets/textures/${definition.key}-color.webp`,
+    maxAnisotropy,
+    { color: true },
+  );
+  const surfaceMap = loadSurfaceTexture(
+    textureLoader,
+    `assets/textures/${definition.key}-surface.webp`,
+    maxAnisotropy,
+  );
+  return { colorMap, bumpMap: surfaceMap, roughnessMap: surfaceMap };
 }
 
 function createRingTexture(colorValue) {
@@ -1211,10 +1049,6 @@ function createMapSmithLogoTexture() {
     context.fill(new Path2D(path));
   });
   return new THREE.CanvasTexture(canvasTexture);
-}
-
-function hashString(value) {
-  return [...value].reduce((hash, character) => Math.imul(hash ^ character.charCodeAt(0), 16777619), 2166136261) >>> 0;
 }
 
 function seededRandom(seed) {

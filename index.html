@@ -20,9 +20,8 @@
     <title>Santhosh Balaji S — Software Developer</title>
     <link rel="icon" href="favicon.svg?v=10" type="image/svg+xml" />
     <link rel="stylesheet" href="theme.css?v=4" />
-    <link rel="stylesheet" href="styles.css?v=57" />
-    <script type="module" src="three-universe.js?v=30"></script>
-    <script src="script.js?v=21" defer></script>
+    <link rel="stylesheet" href="styles.css?v=59" />
+    <script src="script.js?v=26" defer></script>
     <script src="analytics.js?v=1" defer></script>
     <noscript>
       <style>
@@ -82,13 +81,15 @@
 
     <main id="main">
       <section class="hero" id="top" aria-labelledby="hero-title">
-        <div class="hero-copy reveal">
+        <div class="hero-copy reveal is-visible">
           <div class="hero-identity">
             <figure class="identity-portrait">
               <img
-                src="assets/profile/santhosh-balaji.jpg"
-                width="576"
-                height="720"
+                src="assets/profile/santhosh-balaji-128.webp"
+                srcset="assets/profile/santhosh-balaji-128.webp 128w, assets/profile/santhosh-balaji-192.webp 192w, assets/profile/santhosh-balaji-288.webp 288w"
+                sizes="(max-width: 580px) 66px, (max-width: 960px) 74px, 86px"
+                width="128"
+                height="160"
                 alt="Portrait of Santhosh Balaji S"
                 decoding="async"
                 fetchpriority="high"
@@ -112,7 +113,7 @@
           </div>
         </div>
 
-        <div class="gravity-stage reveal" id="gravity-stage" data-active-orbit="jurisfield" data-three-state="booting" data-three-discovery="pending" aria-label="Interactive 3D product orrery with JurisField, Atlas, NammaTN, and MapSmith orbiting an India-facing Earth">
+        <div class="gravity-stage reveal is-visible" id="gravity-stage" data-active-orbit="jurisfield" data-three-state="booting" data-three-discovery="pending" aria-label="Interactive 3D product orrery with JurisField, Atlas, NammaTN, and MapSmith orbiting an India-facing Earth">
           <canvas
             class="universe-render"
             id="universe-render"
@@ -149,7 +150,7 @@
                 width="480"
                 height="480"
                 data-focus="India"
-                data-texture="assets/earth-cloudless-surface.jpg"
+                data-texture="assets/textures/earth-color.webp"
                 data-source="NASA Blue Marble Next Generation, December 2004"
               ></canvas>
             </span>

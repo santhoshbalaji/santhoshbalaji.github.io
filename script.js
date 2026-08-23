@@ -103,8 +103,34 @@ if (gravityStage?.dataset.threeState === "booting") {
     gravityStage.dataset.threeState = "fallback";
     const universeCanvas = document.querySelector("#universe-render");
     if (universeCanvas) universeCanvas.hidden = true;
+    renderCloudlessEarth();
   }, 8000);
 }
+
+function loadThreeUniverse() {
+  import("./three-universe.js?v=34").catch((error) => {
+    if (gravityStage?.dataset.threeState !== "booting") return;
+    window.clearTimeout(window.__portfolioUniverseBootTimer);
+    gravityStage.dataset.threeState = "fallback";
+    const universeCanvas = document.querySelector("#universe-render");
+    if (universeCanvas) universeCanvas.hidden = true;
+    window.dispatchEvent(new CustomEvent("universe:fallback"));
+    console.warn("3D universe module unavailable; using the accessible CSS fallback.", error);
+  });
+}
+
+function scheduleThreeUniverse() {
+  const start = () => {
+    if ("requestIdleCallback" in window) {
+      window.requestIdleCallback(loadThreeUniverse, { timeout: 900 });
+    } else {
+      window.setTimeout(loadThreeUniverse, 80);
+    }
+  };
+  window.requestAnimationFrame(() => window.requestAnimationFrame(start));
+}
+
+scheduleThreeUniverse();
 const orbitPlanets = [...document.querySelectorAll("[data-orbit-planet]")];
 const orbitPaths = new Map(
   [...document.querySelectorAll("[data-orbit-path]")].map((path) => [path.dataset.orbitPath, path]),
@@ -131,9 +157,11 @@ let activeOrbitInteractionLocked = false;
 let scrollDepth = 0;
 let orbitalElapsed = 0;
 let lastFrameTime = performance.now();
+let fallbackEarthRenderingStarted = false;
 
 function renderCloudlessEarth() {
-  if (!earthCanvas) return;
+  if (!earthCanvas || fallbackEarthRenderingStarted) return;
+  fallbackEarthRenderingStarted = true;
   const earthContext = earthCanvas.getContext("2d", { alpha: true });
   if (!earthContext) return;
 
@@ -222,7 +250,8 @@ function renderCloudlessEarth() {
   texture.src = earthCanvas.dataset.texture;
 }
 
-renderCloudlessEarth();
+if (gravityStage?.dataset.threeState === "fallback") renderCloudlessEarth();
+window.addEventListener("universe:fallback", renderCloudlessEarth, { once: true });
 
 function setActiveOrbit(project) {
   const data = projectData[project];
@@ -311,7 +340,7 @@ function sizeStarfield() {
   canvas.style.height = `${window.innerHeight}px`;
   context.setTransform(ratio, 0, 0, ratio, 0, 0);
   createStars();
-  updateProductOrbits();
+  if (gravityStage?.dataset.threeState === "fallback") updateProductOrbits();
   drawStarfield();
 }
 
@@ -393,7 +422,7 @@ function animateStarfield(timestamp) {
   const frameDelta = Math.min(64, Math.max(0, frameTime - lastFrameTime));
   lastFrameTime = frameTime;
   orbitalElapsed += frameDelta;
-  updateProductOrbits();
+  if (gravityStage?.dataset.threeState === "fallback") updateProductOrbits();
   drawStarfield(frameTime);
   if (motionRunning) starFrame = window.requestAnimationFrame(animateStarfield);
 }
@@ -401,7 +430,7 @@ function animateStarfield(timestamp) {
 function startStarfield() {
   window.cancelAnimationFrame(starFrame);
   lastFrameTime = performance.now();
-  updateProductOrbits();
+  if (gravityStage?.dataset.threeState === "fallback") updateProductOrbits();
   drawStarfield();
   if (motionRunning) starFrame = window.requestAnimationFrame(animateStarfield);
 }
