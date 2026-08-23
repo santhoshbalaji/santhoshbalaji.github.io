@@ -95,6 +95,8 @@ async function initialiseUniverse() {
   });
 
   const raycaster = new THREE.Raycaster();
+  const occlusionRaycaster = new THREE.Raycaster();
+  const occlusionDirection = new THREE.Vector3();
   const pointer = new THREE.Vector2(4, 4);
   const projected = new THREE.Vector3();
   const worldPosition = new THREE.Vector3();
@@ -117,11 +119,18 @@ async function initialiseUniverse() {
   let dragDistance = 0;
   let targetRotationX = 0;
   let targetRotationY = 0;
+  let angularVelocityX = 0;
+  let angularVelocityY = 0;
+  let lastPointerSample = null;
+  let pinchStartDistance = 0;
+  let pinchStartZoom = 1;
+  let pinching = false;
+  const activePointers = new Map();
 
   stage.dataset.threeState = "ready";
   stage.dataset.threeVersion = THREE.REVISION;
   stage.dataset.threeDepth = "complete";
-  stage.dataset.threeInteraction = "orbit-zoom-select";
+  stage.dataset.threeInteraction = "360-orbit-zoom-select";
   stage.classList.add("has-three-universe");
 
   function resize() {
@@ -146,8 +155,12 @@ async function initialiseUniverse() {
   function hitTest(event) {
     updatePointer(event);
     raycaster.setFromCamera(pointer, camera);
-    const intersections = raycaster.intersectObjects(products.map((product) => product.hitTarget), false);
-    return intersections[0]?.object.userData.project || null;
+    const intersections = raycaster.intersectObjects(
+      [earth.mesh, ...products.map((product) => product.hitTarget)],
+      false,
+    );
+    if (!intersections.length || intersections[0].object === earth.mesh) return null;
+    return intersections[0].object.userData.project || null;
   }
 
   function setHovered(project) {
@@ -166,6 +179,15 @@ async function initialiseUniverse() {
     const delta = Math.min(0.05, Math.max(0, (timestamp - lastFrame) / 1000));
     lastFrame = timestamp;
     if (motionEnabled) elapsed += delta;
+
+    if (!dragging) {
+      targetRotationX += angularVelocityX;
+      targetRotationY += angularVelocityY;
+      angularVelocityX *= 0.925;
+      angularVelocityY *= 0.925;
+      if (Math.abs(angularVelocityX) < 0.00002) angularVelocityX = 0;
+      if (Math.abs(angularVelocityY) < 0.00002) angularVelocityY = 0;
+    }
 
     universe.rotation.x += (targetRotationX - universe.rotation.x) * 0.075;
     universe.rotation.y += (targetRotationY - universe.rotation.y) * 0.075;
@@ -209,25 +231,61 @@ async function initialiseUniverse() {
       product.group.getWorldPosition(worldPosition);
       projected.copy(worldPosition).project(camera);
       const perspectiveScale = baseCameraDistance / Math.max(80, camera.position.z - worldPosition.z);
+      const distanceToProduct = camera.position.distanceTo(worldPosition);
+      occlusionDirection.copy(worldPosition).sub(camera.position).normalize();
+      occlusionRaycaster.set(camera.position, occlusionDirection);
+      const earthHit = occlusionRaycaster.intersectObject(earth.mesh, false)[0];
+      const occluded = projected.z < -1
+        || projected.z > 1
+        || Boolean(earthHit && earthHit.distance < distanceToProduct);
       anchor.style.setProperty("--scene-x", `${(projected.x * stageBounds.width * 0.5).toFixed(2)}px`);
       anchor.style.setProperty("--scene-y", `${(-projected.y * stageBounds.height * 0.5).toFixed(2)}px`);
       anchor.style.setProperty("--scene-scale", (orbitScale * perspectiveScale).toFixed(3));
+      anchor.classList.toggle("is-occluded", occluded);
     });
 
     renderer.render(scene, camera);
     const unsettled = Math.abs(targetRotationX - universe.rotation.x) > 0.0005
       || Math.abs(targetRotationY - universe.rotation.y) > 0.0005
-      || Math.abs(targetZoom - currentZoom) > 0.0005;
+      || Math.abs(targetZoom - currentZoom) > 0.0005
+      || Math.abs(angularVelocityX) > 0.00002
+      || Math.abs(angularVelocityY) > 0.00002;
     if (motionEnabled || dragging || force || unsettled) animationFrame = window.requestAnimationFrame(render);
   }
 
   canvas.addEventListener("pointermove", (event) => {
+    if (activePointers.has(event.pointerId)) {
+      activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    }
+    if (activePointers.size >= 2) {
+      pinching = true;
+      const [first, second] = [...activePointers.values()];
+      const distance = Math.hypot(second.x - first.x, second.y - first.y);
+      if (!pinchStartDistance) {
+        pinchStartDistance = distance;
+        pinchStartZoom = targetZoom;
+      }
+      targetZoom = THREE.MathUtils.clamp(
+        pinchStartZoom * (pinchStartDistance / Math.max(1, distance)),
+        0.72,
+        1.48,
+      );
+      pointerDown = null;
+      setHovered(null);
+      render(performance.now(), true);
+      return;
+    }
     if (dragging && pointerDown) {
       const dx = event.clientX - pointerDown.x;
       const dy = event.clientY - pointerDown.y;
       dragDistance = Math.max(dragDistance, Math.hypot(dx, dy));
-      targetRotationY = THREE.MathUtils.clamp(pointerDown.rotationY + dx * 0.0037, -0.82, 0.82);
-      targetRotationX = THREE.MathUtils.clamp(pointerDown.rotationX + dy * 0.0029, -0.46, 0.38);
+      targetRotationY = pointerDown.rotationY + dx * 0.0037;
+      targetRotationX = pointerDown.rotationX + dy * 0.0029;
+      if (lastPointerSample) {
+        angularVelocityY = (event.clientX - lastPointerSample.x) * 0.0014;
+        angularVelocityX = (event.clientY - lastPointerSample.y) * 0.0011;
+      }
+      lastPointerSample = { x: event.clientX, y: event.clientY };
       setHovered(null);
       render(performance.now(), true);
       return;
@@ -237,9 +295,21 @@ async function initialiseUniverse() {
 
   canvas.addEventListener("pointerdown", (event) => {
     if (event.button !== 0) return;
+    activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (activePointers.size === 2) {
+      pinching = true;
+      const [first, second] = [...activePointers.values()];
+      pinchStartDistance = Math.hypot(second.x - first.x, second.y - first.y);
+      pinchStartZoom = targetZoom;
+      pointerDown = null;
+    } else {
+      pointerDown = { x: event.clientX, y: event.clientY, rotationX: targetRotationX, rotationY: targetRotationY };
+    }
     dragging = true;
     dragDistance = 0;
-    pointerDown = { x: event.clientX, y: event.clientY, rotationX: targetRotationX, rotationY: targetRotationY };
+    lastPointerSample = { x: event.clientX, y: event.clientY };
+    angularVelocityX = 0;
+    angularVelocityY = 0;
     try {
       canvas.setPointerCapture(event.pointerId);
     } catch {
@@ -249,23 +319,31 @@ async function initialiseUniverse() {
   });
 
   canvas.addEventListener("pointerup", (event) => {
-    const selected = dragDistance < 7 ? hitTest(event) : null;
+    const selected = !pinching && activePointers.size === 1 && dragDistance < 7 ? hitTest(event) : null;
+    activePointers.delete(event.pointerId);
+    if (!activePointers.size) pinching = false;
+    pinchStartDistance = 0;
     dragging = false;
     pointerDown = null;
+    lastPointerSample = null;
     canvas.classList.remove("is-dragging");
     if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
     if (selected) anchors.get(selected)?.click();
   });
 
-  canvas.addEventListener("pointercancel", () => {
+  canvas.addEventListener("pointercancel", (event) => {
+    activePointers.delete(event.pointerId);
+    if (!activePointers.size) pinching = false;
+    pinchStartDistance = 0;
     dragging = false;
     pointerDown = null;
+    lastPointerSample = null;
     canvas.classList.remove("is-dragging");
   });
 
   canvas.addEventListener("wheel", (event) => {
     event.preventDefault();
-    targetZoom = THREE.MathUtils.clamp(targetZoom + Math.sign(event.deltaY) * 0.085, 0.78, 1.34);
+    targetZoom = THREE.MathUtils.clamp(targetZoom + Math.sign(event.deltaY) * 0.085, 0.72, 1.48);
     render(performance.now(), true);
   }, { passive: false });
 
@@ -273,6 +351,8 @@ async function initialiseUniverse() {
     targetRotationX = 0;
     targetRotationY = 0;
     targetZoom = 1;
+    angularVelocityX = 0;
+    angularVelocityY = 0;
     render(performance.now(), true);
   });
 
@@ -281,16 +361,18 @@ async function initialiseUniverse() {
     const handled = ["arrowleft", "arrowright", "arrowup", "arrowdown", "+", "=", "-", "_", "r", "0"].includes(key);
     if (!handled) return;
     event.preventDefault();
-    if (key === "arrowleft") targetRotationY = THREE.MathUtils.clamp(targetRotationY - 0.12, -0.82, 0.82);
-    if (key === "arrowright") targetRotationY = THREE.MathUtils.clamp(targetRotationY + 0.12, -0.82, 0.82);
-    if (key === "arrowup") targetRotationX = THREE.MathUtils.clamp(targetRotationX - 0.1, -0.46, 0.38);
-    if (key === "arrowdown") targetRotationX = THREE.MathUtils.clamp(targetRotationX + 0.1, -0.46, 0.38);
-    if (["+", "="].includes(key)) targetZoom = THREE.MathUtils.clamp(targetZoom - 0.085, 0.78, 1.34);
-    if (["-", "_"].includes(key)) targetZoom = THREE.MathUtils.clamp(targetZoom + 0.085, 0.78, 1.34);
+    if (key === "arrowleft") targetRotationY -= 0.12;
+    if (key === "arrowright") targetRotationY += 0.12;
+    if (key === "arrowup") targetRotationX -= 0.1;
+    if (key === "arrowdown") targetRotationX += 0.1;
+    if (["+", "="].includes(key)) targetZoom = THREE.MathUtils.clamp(targetZoom - 0.085, 0.72, 1.48);
+    if (["-", "_"].includes(key)) targetZoom = THREE.MathUtils.clamp(targetZoom + 0.085, 0.72, 1.48);
     if (["r", "0"].includes(key)) {
       targetRotationX = 0;
       targetRotationY = 0;
       targetZoom = 1;
+      angularVelocityX = 0;
+      angularVelocityY = 0;
     }
     render(performance.now(), true);
   });
