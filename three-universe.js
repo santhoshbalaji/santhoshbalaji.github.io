@@ -12,6 +12,7 @@ if (stage && canvas) {
 }
 
 async function initialiseUniverse() {
+  const initialisationStarted = performance.now();
   const renderer = new THREE.WebGLRenderer({
     canvas,
     alpha: true,
@@ -28,7 +29,7 @@ async function initialiseUniverse() {
   syncPixelRatio();
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.24;
+  renderer.toneMappingExposure = 0.98;
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(28, 1, 10, 4000);
@@ -38,14 +39,15 @@ async function initialiseUniverse() {
   const universe = new THREE.Group();
   scene.add(universe);
 
-  scene.add(new THREE.AmbientLight(0xaec3eb, 0.82));
-  scene.add(new THREE.HemisphereLight(0xe4edff, 0x030812, 0.9));
-  const keyLight = new THREE.DirectionalLight(0xfff1d0, 4.2);
-  keyLight.position.set(-600, 620, 1000);
+  scene.add(new THREE.AmbientLight(0x52647b, 0.16));
+  scene.add(new THREE.HemisphereLight(0x8fa9c8, 0x01030a, 0.22));
+  const keyLight = new THREE.DirectionalLight(0xffedcf, 4.65);
+  keyLight.position.set(-760, 420, 980);
   scene.add(keyLight);
-  const rimLight = new THREE.DirectionalLight(0x4c6dff, 2.15);
-  rimLight.position.set(620, -180, 760);
+  const rimLight = new THREE.DirectionalLight(0x5172a8, 0.34);
+  rimLight.position.set(640, -260, 520);
   scene.add(rimLight);
+  const sunDirection = keyLight.position.clone().normalize();
 
   const textureLoader = new THREE.TextureLoader();
   const maxAnisotropy = Math.min(renderer.capabilities.getMaxAnisotropy(), 8);
@@ -57,7 +59,7 @@ async function initialiseUniverse() {
       radius: 1.35,
       size: 0.21,
       logo: "assets/logos/jurisfield.svg",
-      logoScale: [0.92, 0.92],
+      logoScale: [0.76, 0.76],
       textureStyle: "terrain",
     },
     {
@@ -67,7 +69,7 @@ async function initialiseUniverse() {
       radius: 1.8,
       size: 0.25,
       logo: "assets/logos/atlas.svg",
-      logoScale: [1.32, 1],
+      logoScale: [1.08, 0.82],
       textureStyle: "bands",
       ringed: true,
     },
@@ -78,7 +80,7 @@ async function initialiseUniverse() {
       radius: 2.22,
       size: 0.225,
       logo: "assets/logos/nammatn.svg",
-      logoScale: [0.96, 0.96],
+      logoScale: [0.78, 0.78],
       textureStyle: "craters",
     },
     {
@@ -88,12 +90,12 @@ async function initialiseUniverse() {
       radius: 2.62,
       size: 0.19,
       logo: "assets/logos/mapsmith.svg",
-      logoScale: [0.9, 0.9],
+      logoScale: [0.74, 0.74],
       textureStyle: "grid",
     },
   ];
 
-  const productUniverse = createProductUniverse(textureLoader, maxAnisotropy, productDefinitions);
+  const productUniverse = createProductUniverse(textureLoader, maxAnisotropy, productDefinitions, sunDirection);
   universe.add(productUniverse.group);
   const { earth, products, occluders } = productUniverse;
 
@@ -135,11 +137,14 @@ async function initialiseUniverse() {
   const activePointers = new Map();
 
   stage.dataset.threeState = "ready";
+  stage.dataset.threeInitMs = String(Math.round(performance.now() - initialisationStarted));
   stage.dataset.threeVersion = THREE.REVISION;
   universe.rotation.set(defaultRotationX, defaultRotationY, 0);
   stage.dataset.threeDepth = "product-orbits";
   stage.dataset.threeOcclusion = "depth-buffered-logos";
   stage.dataset.threeOrbitBounds = "planet-safe";
+  stage.dataset.threeLighting = "single-sun-physical";
+  stage.dataset.threeSurfaces = "terrain-roughness-atmosphere";
   stage.dataset.threeInteraction = "360-product-orbits";
   stage.dataset.portfolioBodies = "earth-jurisfield-atlas-nammatn-mapsmith";
   stage.classList.add("has-three-universe", "has-product-orrery");
@@ -215,10 +220,17 @@ async function initialiseUniverse() {
       const anchor = anchors.get(product.key);
       if (!anchor) return;
       product.group.scale.setScalar((anchor.offsetWidth / 2) / product.size);
-      product.surface.rotation.y += motionEnabled ? delta * (0.18 + product.radius * 0.018) : 0;
-      product.satellitePivot.rotation.z += motionEnabled ? delta * (0.22 + product.radius * 0.02) : 0;
+      product.surface.rotation.y += motionEnabled ? delta * (0.055 + product.radius * 0.012) : 0;
+      product.satellitePivot.rotation.z += motionEnabled ? delta * (0.08 + product.radius * 0.01) : 0;
       const selected = product.key === (hoveredProject || activeProject);
-      product.glow.material.opacity += ((selected ? 0.58 : 0.3) - product.glow.material.opacity) * 0.08;
+      product.glow.material.opacity += ((selected ? 0.095 : 0.028) - product.glow.material.opacity) * 0.08;
+      product.logoSprite.material.opacity += ((selected ? 0.96 : 0.82) - product.logoSprite.material.opacity) * 0.08;
+      product.logoBackdrop.material.opacity += ((selected ? 0.62 : 0.42) - product.logoBackdrop.material.opacity) * 0.08;
+      product.atmosphere.material.uniforms.strength.value += (
+        (selected ? product.atmosphereStrength * 1.18 : product.atmosphereStrength)
+        - product.atmosphere.material.uniforms.strength.value
+      ) * 0.08;
+      product.atmosphere.material.uniforms.viewVector.value.copy(camera.position);
     });
 
     universe.updateMatrixWorld(true);
@@ -428,16 +440,16 @@ async function initialiseUniverse() {
   render(performance.now(), true);
 }
 
-function createProductUniverse(textureLoader, maxAnisotropy, productDefinitions) {
+function createProductUniverse(textureLoader, maxAnisotropy, productDefinitions, sunDirection) {
   const group = new THREE.Group();
-  const earth = createEarth(textureLoader, maxAnisotropy);
+  const earth = createEarth(textureLoader, maxAnisotropy, sunDirection);
   group.add(earth.group);
 
   const earthGlow = new THREE.Sprite(new THREE.SpriteMaterial({
     map: createGlowTexture(0x4f8cff),
     color: 0x4f8cff,
     transparent: true,
-    opacity: 0.22,
+    opacity: 0.055,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
   }));
@@ -445,10 +457,10 @@ function createProductUniverse(textureLoader, maxAnisotropy, productDefinitions)
   group.add(earthGlow);
 
   const orbitSpecs = [
-    { radius: 0.25, ellipse: 0.54, tiltX: 58, tiltY: -7, tiltZ: -8, phase: 0.2, speed: 0.49 },
-    { radius: 0.34, ellipse: 0.58, tiltX: 66, tiltY: 5, tiltZ: 4, phase: 1.82, speed: 0.39 },
-    { radius: 0.43, ellipse: 0.61, tiltX: 52, tiltY: -5, tiltZ: 11, phase: 3.58, speed: 0.31 },
-    { radius: 0.52, ellipse: 0.64, tiltX: 70, tiltY: 8, tiltZ: -3, phase: 5.08, speed: 0.245 },
+    { radius: 0.25, ellipse: 0.54, tiltX: 58, tiltY: -7, tiltZ: -8, phase: 0.2, speed: 0.19 },
+    { radius: 0.34, ellipse: 0.58, tiltX: 66, tiltY: 5, tiltZ: 4, phase: 1.82, speed: 0.15 },
+    { radius: 0.43, ellipse: 0.61, tiltX: 52, tiltY: -5, tiltZ: 11, phase: 3.58, speed: 0.118 },
+    { radius: 0.52, ellipse: 0.64, tiltX: 70, tiltY: 8, tiltZ: -3, phase: 5.08, speed: 0.092 },
   ];
 
   const products = productDefinitions.map((definition, index) => {
@@ -462,7 +474,7 @@ function createProductUniverse(textureLoader, maxAnisotropy, productDefinitions)
     const orbitLine = createOrbitLine(definition.color, 0.13);
     orbitLine.renderOrder = 1;
     orbitPlane.add(orbitLine);
-    const product = createProductWorld(definition, textureLoader, maxAnisotropy);
+    const product = createProductWorld(definition, textureLoader, maxAnisotropy, sunDirection);
     orbitPlane.add(product.group);
     group.add(orbitPlane);
     return { ...definition, ...product, ...spec, orbitPlane, orbitLine, orbitRadius: 1 };
@@ -471,7 +483,7 @@ function createProductUniverse(textureLoader, maxAnisotropy, productDefinitions)
   const depthRandom = seededRandom(20260824);
   const starPositions = [];
   const starColors = [];
-  for (let index = 0; index < 280; index += 1) {
+  for (let index = 0; index < 520; index += 1) {
     starPositions.push(depthRandom() - 0.5, depthRandom() - 0.5, -0.25 - depthRandom() * 0.75);
     const warm = depthRandom() > 0.93;
     starColors.push(warm ? 1 : 0.62, warm ? 0.78 : 0.72, warm ? 0.48 : 1);
@@ -483,7 +495,7 @@ function createProductUniverse(textureLoader, maxAnisotropy, productDefinitions)
     size: 1,
     vertexColors: true,
     transparent: true,
-    opacity: 0.3,
+    opacity: 0.46,
     sizeAttenuation: false,
     depthWrite: false,
   }));
@@ -500,7 +512,7 @@ function createProductUniverse(textureLoader, maxAnisotropy, productDefinitions)
     const verticalExtent = (height * 0.5 - edgeReserve) / (maximumOrbitRatio * perspectiveAllowance);
     const safeOrbitExtent = Math.max(180, Math.min(horizontalExtent, verticalExtent));
     earth.group.scale.setScalar(earthRadius / 0.52);
-    earthGlow.scale.setScalar(earthRadius * 3.35);
+    earthGlow.scale.setScalar(earthRadius * 2.45);
     products.forEach((product) => {
       product.orbitRadius = safeOrbitExtent * product.radius;
       product.orbitLine.scale.set(product.orbitRadius, product.orbitRadius * product.ellipse, 1);
@@ -517,10 +529,9 @@ function createProductUniverse(textureLoader, maxAnisotropy, productDefinitions)
         0,
       );
       const selected = product.key === activeProject;
-      product.orbitLine.material.opacity += ((selected ? 0.52 : 0.11) - product.orbitLine.material.opacity) * 0.08;
-      product.orbitPlane.rotation.z += motionEnabled ? delta * (index % 2 ? -0.006 : 0.004) : 0;
+      product.orbitLine.material.opacity += ((selected ? 0.23 : 0.035) - product.orbitLine.material.opacity) * 0.08;
     });
-    earthGlow.material.opacity = 0.2 + Math.sin(elapsed * 0.62) * 0.025;
+    earthGlow.material.opacity = 0.052 + Math.sin(elapsed * 0.36) * 0.008;
     if (motionEnabled) depthField.rotation.z -= delta * 0.0012;
   }
 
@@ -539,7 +550,7 @@ function createOrbitLine(color, opacity) {
   );
 }
 
-function createEarth(textureLoader, maxAnisotropy) {
+function createEarth(textureLoader, maxAnisotropy, sunDirection) {
   const group = new THREE.Group();
   group.rotation.x = THREE.MathUtils.degToRad(20.6);
   group.rotation.z = THREE.MathUtils.degToRad(-4.2);
@@ -547,12 +558,13 @@ function createEarth(textureLoader, maxAnisotropy) {
   const geometry = new THREE.SphereGeometry(0.52, 128, 64);
   const material = new THREE.MeshPhysicalMaterial({
     color: 0xffffff,
-    emissive: 0x07101d,
-    emissiveIntensity: 0.12,
-    roughness: 0.76,
+    emissive: 0x01040a,
+    emissiveIntensity: 0.018,
+    roughness: 1,
     metalness: 0,
-    clearcoat: 0.08,
-    clearcoatRoughness: 0.78,
+    clearcoat: 0.12,
+    clearcoatRoughness: 0.42,
+    bumpScale: 0.0045,
   });
   const mesh = new THREE.Mesh(geometry, material);
   group.add(mesh);
@@ -564,32 +576,48 @@ function createEarth(textureLoader, maxAnisotropy) {
     texture.wrapS = THREE.RepeatWrapping;
     texture.offset.x = 0.469;
     material.map = texture;
+    const surfaceMaps = createEarthSurfaceMaps(texture, maxAnisotropy);
+    material.roughnessMap = surfaceMaps.roughnessMap;
+    material.bumpMap = surfaceMaps.bumpMap;
     material.needsUpdate = true;
   });
 
-  const atmosphere = new THREE.Mesh(
-    new THREE.SphereGeometry(0.546, 96, 48),
+  const atmosphere = createAtmosphere(0.552, 0x4f8cff, 0.34, sunDirection);
+  group.add(atmosphere);
+
+  return { group, mesh, atmosphere };
+}
+
+function createAtmosphere(radius, color, strength, sunDirection) {
+  return new THREE.Mesh(
+    new THREE.SphereGeometry(radius, 96, 48),
     new THREE.ShaderMaterial({
       uniforms: {
-        glowColor: { value: new THREE.Color(0x4f8cff) },
+        glowColor: { value: new THREE.Color(color) },
         viewVector: { value: new THREE.Vector3() },
+        sunDirection: { value: sunDirection.clone() },
+        strength: { value: strength },
       },
       vertexShader: `
         uniform vec3 viewVector;
-        varying float intensity;
+        uniform vec3 sunDirection;
+        varying float atmosphereAlpha;
         void main() {
           vec3 worldNormal = normalize(mat3(modelMatrix) * normal);
           vec3 worldPosition = (modelMatrix * vec4(position, 1.0)).xyz;
           vec3 viewDirection = normalize(viewVector - worldPosition);
-          intensity = pow(0.72 - dot(worldNormal, viewDirection), 2.45);
+          float fresnel = pow(1.0 - max(dot(worldNormal, viewDirection), 0.0), 2.85);
+          float daylight = smoothstep(-0.24, 0.48, dot(worldNormal, normalize(sunDirection)));
+          atmosphereAlpha = fresnel * (0.12 + daylight * 0.88);
           gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
         }
       `,
       fragmentShader: `
         uniform vec3 glowColor;
-        varying float intensity;
+        uniform float strength;
+        varying float atmosphereAlpha;
         void main() {
-          gl_FragColor = vec4(glowColor, intensity * 0.4);
+          gl_FragColor = vec4(glowColor, atmosphereAlpha * strength);
         }
       `,
       side: THREE.BackSide,
@@ -598,27 +626,25 @@ function createEarth(textureLoader, maxAnisotropy) {
       depthWrite: false,
     }),
   );
-  group.add(atmosphere);
-
-  return { group, mesh, atmosphere };
 }
 
-function createProductWorld(definition, textureLoader, maxAnisotropy) {
+function createProductWorld(definition, textureLoader, maxAnisotropy, sunDirection) {
   const group = new THREE.Group();
-  const texture = createProceduralPlanetTexture(definition);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.anisotropy = maxAnisotropy;
+  const maps = createProceduralPlanetMaps(definition, maxAnisotropy);
   const material = new THREE.MeshPhysicalMaterial({
-    map: texture,
+    map: maps.colorMap,
+    bumpMap: maps.bumpMap,
+    bumpScale: definition.size * (definition.key === "atlas" ? 0.012 : 0.032),
+    roughnessMap: maps.roughnessMap,
     color: 0xffffff,
-    emissive: definition.color,
-    emissiveIntensity: 0.11,
-    roughness: definition.key === "atlas" ? 0.5 : 0.72,
-    metalness: definition.key === "atlas" ? 0.16 : 0.02,
-    clearcoat: 0.14,
-    clearcoatRoughness: 0.55,
+    emissive: definition.deep,
+    emissiveIntensity: 0.018,
+    roughness: 1,
+    metalness: 0,
+    clearcoat: definition.key === "mapsmith" ? 0.24 : 0.04,
+    clearcoatRoughness: definition.key === "mapsmith" ? 0.32 : 0.78,
   });
-  const surface = new THREE.Mesh(new THREE.SphereGeometry(definition.size, 64, 32), material);
+  const surface = new THREE.Mesh(new THREE.SphereGeometry(definition.size, 96, 64), material);
   group.add(surface);
 
   const logoTexture = definition.key === "atlas"
@@ -630,7 +656,7 @@ function createProductWorld(definition, textureLoader, maxAnisotropy) {
     map: logoTexture,
     color: 0xffffff,
     transparent: true,
-    opacity: 1,
+    opacity: 0.82,
     alphaTest: 0.035,
     depthTest: true,
     depthWrite: false,
@@ -649,13 +675,13 @@ function createProductWorld(definition, textureLoader, maxAnisotropy) {
     map: createLogoBackdropTexture(),
     color: 0xffffff,
     transparent: true,
-    opacity: 0.88,
+    opacity: 0.42,
     alphaTest: 0.012,
     depthTest: true,
     depthWrite: false,
     toneMapped: false,
   }));
-  logoBackdrop.scale.setScalar(definition.size * 1.54);
+  logoBackdrop.scale.setScalar(definition.size * 1.28);
   logoBackdrop.renderOrder = 7;
   group.add(logoBackdrop);
 
@@ -666,37 +692,39 @@ function createProductWorld(definition, textureLoader, maxAnisotropy) {
   hitTarget.userData.project = definition.key;
   group.add(hitTarget);
 
-  const halo = new THREE.Mesh(
-    new THREE.RingGeometry(definition.size * 1.18, definition.size * 1.24, 128),
-    new THREE.MeshBasicMaterial({
-      color: definition.color,
-      side: THREE.DoubleSide,
-      transparent: true,
-      opacity: 0.34,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
-    }),
+  const atmosphereStrength = definition.key === "mapsmith" ? 0.18 : definition.key === "atlas" ? 0.11 : 0.14;
+  const atmosphere = createAtmosphere(
+    definition.size * 1.045,
+    definition.color,
+    atmosphereStrength,
+    sunDirection,
   );
-  halo.rotation.x = 0.12;
-  group.add(halo);
+  group.add(atmosphere);
 
   const satellitePivot = new THREE.Group();
   const satellite = new THREE.Mesh(
-    new THREE.SphereGeometry(definition.size * 0.075, 20, 12),
-    new THREE.MeshBasicMaterial({ color: definition.color }),
+    new THREE.SphereGeometry(definition.size * 0.045, 20, 12),
+    new THREE.MeshStandardMaterial({ color: 0x8e918c, roughness: 1, metalness: 0 }),
   );
-  satellite.position.set(definition.size * 1.62, definition.size * 0.32, definition.size * 0.28);
+  satellite.position.set(definition.size * 1.68, definition.size * 0.28, definition.size * 0.22);
   satellitePivot.add(satellite);
   group.add(satellitePivot);
 
   if (definition.ringed) {
+    const ringTexture = createRingTexture(definition.color);
+    ringTexture.colorSpace = THREE.SRGBColorSpace;
+    ringTexture.anisotropy = maxAnisotropy;
     const ring = new THREE.Mesh(
-      new THREE.RingGeometry(definition.size * 1.24, definition.size * 1.74, 128),
-      new THREE.MeshBasicMaterial({
-        color: definition.color,
+      new THREE.RingGeometry(definition.size * 1.28, definition.size * 1.82, 192),
+      new THREE.MeshStandardMaterial({
+        map: ringTexture,
+        color: 0xffffff,
         side: THREE.DoubleSide,
         transparent: true,
-        opacity: 0.48,
+        opacity: 0.68,
+        alphaTest: 0.018,
+        roughness: 0.88,
+        metalness: 0,
         depthWrite: false,
       }),
     );
@@ -710,68 +738,246 @@ function createProductWorld(definition, textureLoader, maxAnisotropy) {
     map: glowTexture,
     color: definition.color,
     transparent: true,
-    opacity: 0.34,
+    opacity: 0.028,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
   }));
-  glow.scale.setScalar(definition.size * 4.1);
+  glow.scale.setScalar(definition.size * 2.9);
   glow.renderOrder = -1;
   group.add(glow);
 
-  return { group, surface, glow, hitTarget, satellitePivot, logoBackdrop, logoSprite };
+  return {
+    group,
+    surface,
+    atmosphere,
+    atmosphereStrength,
+    glow,
+    hitTarget,
+    satellitePivot,
+    logoBackdrop,
+    logoSprite,
+  };
 }
 
-function createProceduralPlanetTexture(definition) {
+function createProceduralPlanetMaps(definition, maxAnisotropy) {
+  const width = 640;
+  const height = 320;
+  const colorCanvas = document.createElement("canvas");
+  const bumpCanvas = document.createElement("canvas");
+  const roughnessCanvas = document.createElement("canvas");
+  [colorCanvas, bumpCanvas, roughnessCanvas].forEach((mapCanvas) => {
+    mapCanvas.width = width;
+    mapCanvas.height = height;
+  });
+  const colorContext = colorCanvas.getContext("2d");
+  const bumpContext = bumpCanvas.getContext("2d");
+  const roughnessContext = roughnessCanvas.getContext("2d");
+  const colorData = colorContext.createImageData(width, height);
+  const bumpData = bumpContext.createImageData(width, height);
+  const roughnessData = roughnessContext.createImageData(width, height);
+  const phase = (hashString(definition.key) % 10000) * 0.001;
+  const random = seededRandom(hashString(`${definition.key}-craters`));
+  const craters = definition.textureStyle === "craters"
+    ? Array.from({ length: 18 }, () => {
+      const longitude = random() * Math.PI * 2;
+      const latitude = Math.asin(random() * 2 - 1);
+      const latitudeRadius = Math.cos(latitude);
+      return {
+        x: Math.cos(longitude) * latitudeRadius,
+        y: Math.sin(latitude),
+        z: Math.sin(longitude) * latitudeRadius,
+        radius: 0.035 + random() * 0.09,
+      };
+    })
+    : [];
+  const palettes = {
+    terrain: [[5, 11, 7], [19, 33, 17], [60, 70, 34], [139, 135, 91]],
+    bands: [[4, 5, 18], [18, 16, 50], [51, 45, 99], [104, 91, 148]],
+    craters: [[19, 5, 4], [61, 17, 13], [120, 45, 27], [178, 105, 69]],
+    grid: [[2, 13, 18], [3, 35, 44], [19, 62, 54], [104, 124, 94]],
+  };
+  const palette = palettes[definition.textureStyle];
+
+  for (let y = 0; y < height; y += 1) {
+    const latitude = (0.5 - (y + 0.5) / height) * Math.PI;
+    const latitudeRadius = Math.cos(latitude);
+    const sphereY = Math.sin(latitude);
+    for (let x = 0; x < width; x += 1) {
+      const longitude = (x + 0.5) / width * Math.PI * 2;
+      const sphereX = Math.cos(longitude) * latitudeRadius;
+      const sphereZ = Math.sin(longitude) * latitudeRadius;
+      const macro = sphericalFbm(sphereX, sphereY, sphereZ, phase);
+      const detail = sphericalFbm(sphereX, sphereY, sphereZ, phase + 7.31);
+      const ridge = 1 - Math.abs(detail * 2 - 1);
+      let elevation = 0.5;
+      let palettePosition = macro;
+      let roughness = 0.78;
+
+      if (definition.textureStyle === "terrain") {
+        elevation = 0.16 + macro * 0.64 + ridge * 0.16;
+        palettePosition = THREE.MathUtils.clamp(macro * 0.82 + ridge * 0.18, 0, 1);
+        roughness = 0.72 + detail * 0.22;
+      } else if (definition.textureStyle === "bands") {
+        const band = 0.5 + Math.sin(latitude * 31 + macro * 4.4 + Math.sin(longitude * 2) * 0.8) * 0.27
+          + Math.sin(latitude * 67 - detail * 3.1) * 0.09;
+        elevation = 0.44 + band * 0.08 + detail * 0.035;
+        palettePosition = THREE.MathUtils.clamp(band * 0.74 + macro * 0.2, 0, 1);
+        roughness = 0.68 + detail * 0.18;
+      } else if (definition.textureStyle === "craters") {
+        elevation = 0.2 + macro * 0.58 + ridge * 0.12;
+        palettePosition = macro * 0.78 + ridge * 0.16;
+        for (const crater of craters) {
+          const distance = Math.sqrt(Math.max(0, 2 - 2 * (
+            sphereX * crater.x + sphereY * crater.y + sphereZ * crater.z
+          )));
+          if (distance >= crater.radius) continue;
+          const normalized = distance / crater.radius;
+          const bowl = 1 - normalized;
+          const rim = Math.exp(-Math.pow((normalized - 0.78) / 0.11, 2));
+          elevation += rim * 0.18 - bowl * 0.24;
+          palettePosition -= bowl * 0.1;
+        }
+        roughness = 0.82 + detail * 0.16;
+      } else {
+        const land = macro > 0.53;
+        elevation = land ? 0.54 + (macro - 0.53) * 0.9 + ridge * 0.08 : 0.29 + macro * 0.22;
+        palettePosition = land ? 0.58 + (macro - 0.53) * 0.82 : macro * 0.7;
+        roughness = land ? 0.76 + detail * 0.18 : 0.22 + detail * 0.12;
+      }
+
+      elevation = THREE.MathUtils.clamp(elevation, 0, 1);
+      palettePosition = THREE.MathUtils.clamp(palettePosition, 0, 1);
+      roughness = THREE.MathUtils.clamp(roughness, 0.08, 1);
+      const sampledColor = samplePlanetPalette(palette, palettePosition);
+      const mineralVariation = 0.82 + detail * 0.26;
+      const pixelIndex = (y * width + x) * 4;
+      colorData.data[pixelIndex] = Math.round(THREE.MathUtils.clamp(sampledColor[0] * mineralVariation, 0, 255));
+      colorData.data[pixelIndex + 1] = Math.round(THREE.MathUtils.clamp(sampledColor[1] * mineralVariation, 0, 255));
+      colorData.data[pixelIndex + 2] = Math.round(THREE.MathUtils.clamp(sampledColor[2] * mineralVariation, 0, 255));
+      colorData.data[pixelIndex + 3] = 255;
+      const heightValue = Math.round(elevation * 255);
+      const roughnessValue = Math.round(roughness * 255);
+      bumpData.data[pixelIndex] = heightValue;
+      bumpData.data[pixelIndex + 1] = heightValue;
+      bumpData.data[pixelIndex + 2] = heightValue;
+      bumpData.data[pixelIndex + 3] = 255;
+      roughnessData.data[pixelIndex] = roughnessValue;
+      roughnessData.data[pixelIndex + 1] = roughnessValue;
+      roughnessData.data[pixelIndex + 2] = roughnessValue;
+      roughnessData.data[pixelIndex + 3] = 255;
+    }
+  }
+
+  colorContext.putImageData(colorData, 0, 0);
+  bumpContext.putImageData(bumpData, 0, 0);
+  roughnessContext.putImageData(roughnessData, 0, 0);
+  const colorMap = new THREE.CanvasTexture(colorCanvas);
+  const bumpMap = new THREE.CanvasTexture(bumpCanvas);
+  const roughnessMap = new THREE.CanvasTexture(roughnessCanvas);
+  colorMap.colorSpace = THREE.SRGBColorSpace;
+  [colorMap, bumpMap, roughnessMap].forEach((texture) => {
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.anisotropy = maxAnisotropy;
+  });
+  return { colorMap, bumpMap, roughnessMap };
+}
+
+function sphericalFbm(x, y, z, phase) {
+  let amplitude = 0.56;
+  let frequency = 1.34;
+  let total = 0;
+  let normalization = 0;
+  for (let octave = 0; octave < 5; octave += 1) {
+    const waveA = Math.sin((x * 1.31 + y * 1.87 - z * 0.73) * frequency + phase
+      + Math.sin((z * 1.43 + y * 0.57) * frequency));
+    const waveB = Math.cos((z * 1.17 - x * 0.83 + y * 1.41) * frequency - phase * 0.71
+      + Math.sin(x * frequency * 0.91));
+    total += (waveA * 0.62 + waveB * 0.38) * amplitude;
+    normalization += amplitude;
+    amplitude *= 0.5;
+    frequency *= 2.03;
+  }
+  return THREE.MathUtils.clamp(0.5 + total / normalization * 0.5, 0, 1);
+}
+
+function samplePlanetPalette(palette, position) {
+  const scaled = THREE.MathUtils.clamp(position, 0, 1) * (palette.length - 1);
+  const index = Math.min(palette.length - 2, Math.floor(scaled));
+  const mix = scaled - index;
+  return palette[index].map((channel, channelIndex) => (
+    channel + (palette[index + 1][channelIndex] - channel) * mix
+  ));
+}
+
+function createEarthSurfaceMaps(dayTexture, maxAnisotropy) {
+  const source = dayTexture.image;
+  const width = Math.min(1024, source.naturalWidth || source.width || 1024);
+  const height = Math.round(width * ((source.naturalHeight || source.height || 512) / (source.naturalWidth || source.width || 1024)));
+  const sourceCanvas = document.createElement("canvas");
+  const bumpCanvas = document.createElement("canvas");
+  const roughnessCanvas = document.createElement("canvas");
+  [sourceCanvas, bumpCanvas, roughnessCanvas].forEach((mapCanvas) => {
+    mapCanvas.width = width;
+    mapCanvas.height = height;
+  });
+  const sourceContext = sourceCanvas.getContext("2d", { willReadFrequently: true });
+  sourceContext.drawImage(source, 0, 0, width, height);
+  const sourceData = sourceContext.getImageData(0, 0, width, height).data;
+  const bumpContext = bumpCanvas.getContext("2d");
+  const roughnessContext = roughnessCanvas.getContext("2d");
+  const bumpData = bumpContext.createImageData(width, height);
+  const roughnessData = roughnessContext.createImageData(width, height);
+  for (let pixelIndex = 0; pixelIndex < sourceData.length; pixelIndex += 4) {
+    const red = sourceData[pixelIndex];
+    const green = sourceData[pixelIndex + 1];
+    const blue = sourceData[pixelIndex + 2];
+    const luminance = red * 0.2126 + green * 0.7152 + blue * 0.0722;
+    const ocean = blue > red * 1.08 && blue > green * 0.82;
+    const bump = ocean ? 70 : THREE.MathUtils.clamp(108 + luminance * 0.43, 105, 205);
+    const roughness = ocean ? 48 : THREE.MathUtils.clamp(176 + luminance * 0.22, 176, 232);
+    bumpData.data[pixelIndex] = bump;
+    bumpData.data[pixelIndex + 1] = bump;
+    bumpData.data[pixelIndex + 2] = bump;
+    bumpData.data[pixelIndex + 3] = 255;
+    roughnessData.data[pixelIndex] = roughness;
+    roughnessData.data[pixelIndex + 1] = roughness;
+    roughnessData.data[pixelIndex + 2] = roughness;
+    roughnessData.data[pixelIndex + 3] = 255;
+  }
+  bumpContext.putImageData(bumpData, 0, 0);
+  roughnessContext.putImageData(roughnessData, 0, 0);
+  const bumpMap = new THREE.CanvasTexture(bumpCanvas);
+  const roughnessMap = new THREE.CanvasTexture(roughnessCanvas);
+  [bumpMap, roughnessMap].forEach((texture) => {
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.offset.x = 0.469;
+    texture.anisotropy = maxAnisotropy;
+  });
+  return { bumpMap, roughnessMap };
+}
+
+function createRingTexture(colorValue) {
   const canvasTexture = document.createElement("canvas");
-  canvasTexture.width = 768;
-  canvasTexture.height = 384;
+  canvasTexture.width = 512;
+  canvasTexture.height = 512;
   const context = canvasTexture.getContext("2d");
-  const color = new THREE.Color(definition.color);
-  const deep = new THREE.Color(definition.deep);
-  const gradient = context.createLinearGradient(0, 0, canvasTexture.width, canvasTexture.height);
-  gradient.addColorStop(0, `#${color.clone().lerp(new THREE.Color(0xffffff), 0.24).getHexString()}`);
-  gradient.addColorStop(0.46, `#${color.getHexString()}`);
-  gradient.addColorStop(1, `#${deep.getHexString()}`);
-  context.fillStyle = gradient;
-  context.fillRect(0, 0, canvasTexture.width, canvasTexture.height);
-
-  const random = seededRandom(hashString(definition.key));
-  context.globalCompositeOperation = "soft-light";
-  for (let index = 0; index < 190; index += 1) {
-    const x = random() * canvasTexture.width;
-    const y = random() * canvasTexture.height;
-    const radius = 4 + random() * (definition.textureStyle === "craters" ? 35 : 58);
-    const alpha = 0.035 + random() * 0.13;
-    context.fillStyle = random() > 0.48 ? `rgba(255,255,255,${alpha})` : `rgba(0,0,0,${alpha * 1.35})`;
+  const color = new THREE.Color(colorValue);
+  const pale = color.clone().lerp(new THREE.Color(0xd8d4c6), 0.56);
+  const deep = color.clone().lerp(new THREE.Color(0x05060c), 0.58);
+  const center = canvasTexture.width / 2;
+  for (let radius = 174; radius <= 255; radius += 1) {
+    const normalized = (radius - 174) / 81;
+    const density = 0.18 + Math.pow(Math.sin(normalized * Math.PI * 11), 2) * 0.36
+      + Math.pow(Math.sin(normalized * Math.PI * 3.2), 2) * 0.18;
+    const ringColor = deep.clone().lerp(pale, 0.26 + density * 0.62);
+    const edgeFade = Math.min(1, normalized * 8, (1 - normalized) * 8);
+    context.strokeStyle = `rgba(${Math.round(ringColor.r * 255)},${Math.round(ringColor.g * 255)},${Math.round(ringColor.b * 255)},${density * edgeFade})`;
+    context.lineWidth = 1.2;
     context.beginPath();
-    context.ellipse(x, y, radius * (0.7 + random()), radius * (0.24 + random() * 0.65), random() * Math.PI, 0, Math.PI * 2);
-    context.fill();
+    context.arc(center, center, radius, 0, Math.PI * 2);
+    context.stroke();
   }
-
-  if (definition.textureStyle === "bands") {
-    context.globalCompositeOperation = "screen";
-    for (let y = 12; y < canvasTexture.height; y += 22) {
-      context.fillStyle = `rgba(224,226,255,${0.025 + random() * 0.08})`;
-      context.fillRect(0, y, canvasTexture.width, 4 + random() * 9);
-    }
-  }
-
-  if (definition.textureStyle === "grid") {
-    context.globalCompositeOperation = "screen";
-    context.strokeStyle = "rgba(194,255,248,0.12)";
-    context.lineWidth = 1;
-    for (let x = 0; x < canvasTexture.width; x += 48) {
-      context.beginPath(); context.moveTo(x, 0); context.lineTo(x, canvasTexture.height); context.stroke();
-    }
-    for (let y = 0; y < canvasTexture.height; y += 48) {
-      context.beginPath(); context.moveTo(0, y); context.lineTo(canvasTexture.width, y); context.stroke();
-    }
-  }
-
-  context.globalCompositeOperation = "source-over";
-  const texture = new THREE.CanvasTexture(canvasTexture);
-  texture.wrapS = THREE.RepeatWrapping;
-  return texture;
+  return new THREE.CanvasTexture(canvasTexture);
 }
 
 function createGlowTexture(colorValue) {
