@@ -54,13 +54,13 @@ async function initialiseUniverse() {
       key: "jurisfield",
       color: 0xb8e62e,
       deep: 0x183309,
-      radius: 2.08,
+      radius: 2.0,
       flatten: 0.39,
       inclination: -0.22,
       yaw: -0.05,
       phase: 2.12,
       period: 18,
-      size: 0.29,
+      size: 0.24,
       logo: "assets/logos/jurisfield.svg",
       textureStyle: "terrain",
     },
@@ -68,13 +68,13 @@ async function initialiseUniverse() {
       key: "atlas",
       color: 0x6257ff,
       deep: 0x11104a,
-      radius: 2.72,
+      radius: 2.35,
       flatten: 0.42,
       inclination: 0.16,
       yaw: -0.16,
       phase: 0.82,
       period: 25,
-      size: 0.36,
+      size: 0.3,
       logo: "assets/logos/atlas.svg",
       textureStyle: "bands",
       ringed: true,
@@ -83,13 +83,13 @@ async function initialiseUniverse() {
       key: "nammatn",
       color: 0xd11f27,
       deep: 0x3c080b,
-      radius: 3.32,
+      radius: 2.85,
       flatten: 0.45,
       inclination: -0.12,
       yaw: 0.13,
       phase: 4.82,
       period: 34,
-      size: 0.31,
+      size: 0.26,
       logo: "assets/logos/nammatn.svg",
       textureStyle: "craters",
     },
@@ -97,13 +97,13 @@ async function initialiseUniverse() {
       key: "mapsmith",
       color: 0x34bbb4,
       deep: 0x073338,
-      radius: 3.92,
+      radius: 3.35,
       flatten: 0.48,
       inclination: 0.21,
       yaw: 0.08,
       phase: 3.47,
       period: 44,
-      size: 0.27,
+      size: 0.22,
       logo: "assets/logos/mapsmith.svg",
       textureStyle: "grid",
     },
@@ -112,7 +112,7 @@ async function initialiseUniverse() {
   const products = productDefinitions.map((definition, index) => {
     const orbit = createOrbit(definition, index === 0);
     universe.add(orbit.line);
-    const product = createProductWorld(definition, textureLoader, maxAnisotropy);
+    const product = createProductWorld(definition, maxAnisotropy);
     universe.add(product.group);
     return { ...definition, ...product, orbit };
   });
@@ -199,8 +199,6 @@ async function initialiseUniverse() {
       orbitalPoint.applyEuler(product.orbit.euler);
       product.group.position.copy(orbitalPoint);
       product.surface.rotation.y += motionEnabled ? delta * (0.18 + product.radius * 0.018) : 0;
-      product.logo.material.rotation = Math.sin(elapsed * 0.4 + product.phase) * 0.018;
-
       const selected = product.key === (hoveredProject || activeProject);
       const desiredScale = selected ? 1.18 : 1;
       product.group.scale.lerp(new THREE.Vector3(desiredScale, desiredScale, desiredScale), 0.08);
@@ -374,7 +372,7 @@ function createOrbit(definition, active) {
   return { line, euler };
 }
 
-function createProductWorld(definition, textureLoader, maxAnisotropy) {
+function createProductWorld(definition, maxAnisotropy) {
   const group = new THREE.Group();
   const texture = createProceduralPlanetTexture(definition);
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -415,20 +413,6 @@ function createProductWorld(definition, textureLoader, maxAnisotropy) {
     group.add(ring);
   }
 
-  const logoTexture = textureLoader.load(definition.logo, (loaded) => {
-    loaded.colorSpace = THREE.SRGBColorSpace;
-    loaded.anisotropy = maxAnisotropy;
-  });
-  const logo = new THREE.Sprite(new THREE.SpriteMaterial({
-    map: logoTexture,
-    transparent: true,
-    depthTest: false,
-    depthWrite: false,
-  }));
-  logo.scale.setScalar(definition.size * 1.15);
-  logo.renderOrder = 8;
-  group.add(logo);
-
   const glowTexture = createGlowTexture(definition.color);
   const glow = new THREE.Sprite(new THREE.SpriteMaterial({
     map: glowTexture,
@@ -442,7 +426,7 @@ function createProductWorld(definition, textureLoader, maxAnisotropy) {
   glow.renderOrder = -1;
   group.add(glow);
 
-  return { group, surface, logo, glow, hitTarget };
+  return { group, surface, glow, hitTarget };
 }
 
 function createProceduralPlanetTexture(definition) {
