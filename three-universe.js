@@ -62,7 +62,8 @@ async function initialiseUniverse() {
       radius: 1.35,
       size: 0.21,
       logo: "assets/logos/jurisfield.svg",
-      logoScale: [0.76, 0.76],
+      logoScale: [0.92, 0.92],
+      logoPlateScale: 1.52,
       textureStyle: "terrain",
     },
     {
@@ -73,6 +74,7 @@ async function initialiseUniverse() {
       size: 0.25,
       logo: "assets/logos/atlas.svg",
       logoScale: [1.08, 0.82],
+      logoPlateScale: 1.54,
       textureStyle: "bands",
       ringed: true,
     },
@@ -83,7 +85,8 @@ async function initialiseUniverse() {
       radius: 2.22,
       size: 0.225,
       logo: "assets/logos/nammatn.svg",
-      logoScale: [0.78, 0.78],
+      logoScale: [0.9, 0.9],
+      logoPlateScale: 1.52,
       textureStyle: "craters",
     },
     {
@@ -93,7 +96,8 @@ async function initialiseUniverse() {
       radius: 2.62,
       size: 0.19,
       logo: "assets/logos/mapsmith.svg",
-      logoScale: [0.74, 0.74],
+      logoScale: [0.98, 0.98],
+      logoPlateScale: 1.58,
       textureStyle: "grid",
     },
   ];
@@ -157,6 +161,8 @@ async function initialiseUniverse() {
   stage.dataset.threeLighting = "single-sun-physical";
   stage.dataset.threeSurfaces = "terrain-roughness-atmosphere";
   stage.dataset.threeInteraction = "360-product-orbits";
+  stage.dataset.threeLogoTreatment = "camera-facing-product-plates";
+  stage.dataset.threeLogoFit = "asset-specific-optical";
   stage.dataset.portfolioBodies = "earth-jurisfield-atlas-nammatn-mapsmith";
   function resize() {
     syncPixelRatio();
@@ -239,8 +245,8 @@ async function initialiseUniverse() {
       product.satellitePivot.rotation.z += motionEnabled ? delta * (0.08 + product.radius * 0.01) : 0;
       const selected = product.key === (hoveredProject || activeProject);
       product.glow.material.opacity += ((selected ? 0.095 : 0.028) - product.glow.material.opacity) * 0.08;
-      product.logoSprite.material.opacity += ((selected ? 0.96 : 0.82) - product.logoSprite.material.opacity) * 0.08;
-      product.logoBackdrop.material.opacity += ((selected ? 0.62 : 0.42) - product.logoBackdrop.material.opacity) * 0.08;
+      product.logoSprite.material.opacity += ((selected ? 1 : 0.94) - product.logoSprite.material.opacity) * 0.08;
+      product.logoBackdrop.material.opacity += ((selected ? 0.96 : 0.78) - product.logoBackdrop.material.opacity) * 0.08;
       product.atmosphere.material.uniforms.strength.value += (
         (selected ? product.atmosphereStrength * 1.18 : product.atmosphereStrength)
         - product.atmosphere.material.uniforms.strength.value
@@ -256,8 +262,8 @@ async function initialiseUniverse() {
       logoFacingPoint.copy(camera.position);
       product.group.worldToLocal(logoFacingPoint);
       logoFacingPoint.normalize();
-      product.logoBackdrop.position.copy(logoFacingPoint).multiplyScalar(product.size * 1.025);
-      product.logoSprite.position.copy(logoFacingPoint).multiplyScalar(product.size * 1.045);
+      product.logoBackdrop.position.copy(logoFacingPoint).multiplyScalar(product.size * 1.035);
+      product.logoSprite.position.copy(logoFacingPoint).multiplyScalar(product.size * 1.065);
       product.group.getWorldPosition(worldPosition);
       projected.copy(worldPosition).project(camera);
       const perspectiveScale = baseCameraDistance / Math.max(80, camera.position.z - worldPosition.z);
@@ -745,14 +751,21 @@ function createProductWorld(definition, textureLoader, maxAnisotropy, sunDirecti
 
   const logoTexture = definition.key === "atlas"
     ? createAtlasLogoTexture()
-    : textureLoader.load(definition.logo);
+    : definition.key === "jurisfield"
+      ? createJurisFieldLogoTexture()
+      : definition.key === "mapsmith"
+        ? createMapSmithLogoTexture()
+        : textureLoader.load(definition.logo);
   logoTexture.colorSpace = THREE.SRGBColorSpace;
   logoTexture.anisotropy = maxAnisotropy;
+  logoTexture.magFilter = THREE.LinearFilter;
+  logoTexture.minFilter = THREE.LinearMipmapLinearFilter;
+  logoTexture.generateMipmaps = true;
   const logoSprite = new THREE.Sprite(new THREE.SpriteMaterial({
     map: logoTexture,
     color: 0xffffff,
     transparent: true,
-    opacity: 0.82,
+    opacity: 0.94,
     alphaTest: 0.035,
     depthTest: true,
     depthWrite: false,
@@ -768,16 +781,16 @@ function createProductWorld(definition, textureLoader, maxAnisotropy, sunDirecti
   group.add(logoSprite);
 
   const logoBackdrop = new THREE.Sprite(new THREE.SpriteMaterial({
-    map: createLogoBackdropTexture(),
+    map: createLogoPlateTexture(definition.color),
     color: 0xffffff,
     transparent: true,
-    opacity: 0.42,
+    opacity: 0.78,
     alphaTest: 0.012,
     depthTest: true,
     depthWrite: false,
     toneMapped: false,
   }));
-  logoBackdrop.scale.setScalar(definition.size * 1.28);
+  logoBackdrop.scale.setScalar(definition.size * definition.logoPlateScale);
   logoBackdrop.renderOrder = 7;
   group.add(logoBackdrop);
 
@@ -1092,19 +1105,53 @@ function createGlowTexture(colorValue) {
   return new THREE.CanvasTexture(canvasTexture);
 }
 
-function createLogoBackdropTexture() {
+function createLogoPlateTexture(colorValue) {
   const canvasTexture = document.createElement("canvas");
-  canvasTexture.width = 256;
-  canvasTexture.height = 256;
+  canvasTexture.width = 384;
+  canvasTexture.height = 384;
   const context = canvasTexture.getContext("2d");
-  const gradient = context.createRadialGradient(128, 128, 18, 128, 128, 126);
-  gradient.addColorStop(0, "rgba(0,4,12,0.82)");
-  gradient.addColorStop(0.52, "rgba(0,4,12,0.68)");
-  gradient.addColorStop(0.78, "rgba(0,4,12,0.26)");
-  gradient.addColorStop(1, "rgba(0,4,12,0)");
-  context.fillStyle = gradient;
-  context.fillRect(0, 0, 256, 256);
-  return new THREE.CanvasTexture(canvasTexture);
+  const accent = new THREE.Color(colorValue);
+  const rgb = `${Math.round(accent.r * 255)},${Math.round(accent.g * 255)},${Math.round(accent.b * 255)}`;
+
+  const outerGlow = context.createRadialGradient(192, 192, 112, 192, 192, 188);
+  outerGlow.addColorStop(0, `rgba(${rgb},0.2)`);
+  outerGlow.addColorStop(0.62, `rgba(${rgb},0.08)`);
+  outerGlow.addColorStop(1, `rgba(${rgb},0)`);
+  context.fillStyle = outerGlow;
+  context.fillRect(0, 0, 384, 384);
+
+  const plate = context.createRadialGradient(154, 136, 12, 192, 192, 146);
+  plate.addColorStop(0, "rgba(64,78,102,0.98)");
+  plate.addColorStop(0.28, "rgba(24,34,51,0.98)");
+  plate.addColorStop(0.74, "rgba(5,10,19,0.99)");
+  plate.addColorStop(1, "rgba(0,4,12,0.99)");
+  context.beginPath();
+  context.arc(192, 192, 146, 0, Math.PI * 2);
+  context.fillStyle = plate;
+  context.fill();
+
+  context.beginPath();
+  context.arc(192, 192, 145, 0, Math.PI * 2);
+  context.strokeStyle = `rgba(${rgb},0.86)`;
+  context.lineWidth = 5;
+  context.stroke();
+
+  context.beginPath();
+  context.arc(192, 192, 136, 0, Math.PI * 2);
+  context.strokeStyle = "rgba(225,235,255,0.16)";
+  context.lineWidth = 2;
+  context.stroke();
+
+  context.beginPath();
+  context.arc(192, 192, 125, Math.PI * 1.05, Math.PI * 1.58);
+  context.strokeStyle = "rgba(244,248,255,0.22)";
+  context.lineCap = "round";
+  context.lineWidth = 3;
+  context.stroke();
+
+  const texture = new THREE.CanvasTexture(canvasTexture);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
 }
 
 function createAtlasLogoTexture() {
@@ -1124,6 +1171,45 @@ function createAtlasLogoTexture() {
   context.lineWidth = 4.5;
   context.lineCap = "round";
   context.stroke(new Path2D("M4 37c14-11 26-12 41-6 15 6 26 10 41-3"));
+  return new THREE.CanvasTexture(canvasTexture);
+}
+
+function createJurisFieldLogoTexture() {
+  const canvasTexture = document.createElement("canvas");
+  canvasTexture.width = 384;
+  canvasTexture.height = 384;
+  const context = canvasTexture.getContext("2d");
+  context.scale(6, 6);
+  context.fillStyle = "#113b2b";
+  context.fill(new Path2D("M16 0h32c8.84 0 16 7.16 16 16v32c0 8.84-7.16 16-16 16H16C7.16 64 0 56.84 0 48V16C0 7.16 7.16 0 16 0Z"));
+  context.strokeStyle = "#d7f24a";
+  context.lineWidth = 3.5;
+  context.lineCap = "round";
+  context.lineJoin = "round";
+  context.stroke(new Path2D("M14 22 19 11 32 9 41 15 52 16 56 27 51 35 55 43 48 51 38 53 29 57 21 50 10 47 9 35 13 28Z"));
+  context.stroke(new Path2D("M20 27v-6h6M44 37v6h-6"));
+  context.beginPath();
+  context.arc(32, 32, 3.25, 0, Math.PI * 2);
+  context.fillStyle = "#d7f24a";
+  context.fill();
+  return new THREE.CanvasTexture(canvasTexture);
+}
+
+function createMapSmithLogoTexture() {
+  const canvasTexture = document.createElement("canvas");
+  canvasTexture.width = 288;
+  canvasTexture.height = 288;
+  const context = canvasTexture.getContext("2d");
+  context.scale(12, 12);
+  [
+    ["M22 19.2727C22 20.779 20.779 22 19.2727 22H14.7273C13.221 22 12 20.779 12 19.2727V12H19.2727C20.779 12 22 13.221 22 14.7273V19.2727Z", "#20a39a"],
+    ["M20 2C21.1046 2 22 2.89543 22 4V7C22 8.10457 21.1046 9 20 9H17C15.8954 9 15 8.10457 15 7V4C15 2.89543 15.8954 2 17 2H20Z", "#4b5fd3"],
+    ["M7 15C8.10457 15 9 15.8954 9 17V20C9 21.1046 8.10457 22 7 22H4C2.89543 22 2 21.1046 2 20V17C2 15.8954 2.89543 15 4 15H7Z", "#4b5fd3"],
+    ["M12 12H4.72727C3.22104 12 2 10.779 2 9.27273V4.72727C2 3.22104 3.22104 2 4.72727 2H9.27273C10.779 2 12 3.22104 12 4.72727V12Z", "#10231f"],
+  ].forEach(([path, fill]) => {
+    context.fillStyle = fill;
+    context.fill(new Path2D(path));
+  });
   return new THREE.CanvasTexture(canvasTexture);
 }
 
