@@ -343,7 +343,7 @@ function drawStarfield(timestamp = performance.now()) {
 }
 
 function updateProductOrbits(elapsed = orbitalElapsed) {
-  if (!gravityStage || gravityStage.classList.contains("has-three-universe")) return;
+  if (!gravityStage) return;
   const bounds = gravityStage.getBoundingClientRect();
   if (!bounds.width || !bounds.height) return;
 
@@ -408,7 +408,7 @@ sizeStarfield();
 startStarfield();
 
 gravityStage.addEventListener("pointermove", (event) => {
-  if (!motionRunning || gravityStage.classList.contains("has-three-universe")) return;
+  if (!motionRunning) return;
   const bounds = gravityStage.getBoundingClientRect();
   const x = (event.clientX - bounds.left) / bounds.width - 0.5;
   const y = (event.clientY - bounds.top) / bounds.height - 0.5;
