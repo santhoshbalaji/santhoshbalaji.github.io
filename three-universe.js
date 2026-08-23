@@ -54,13 +54,13 @@ async function initialiseUniverse() {
       key: "jurisfield",
       color: 0xb8e62e,
       deep: 0x183309,
-      radius: 2.0,
+      radius: 1.35,
       flatten: 0.39,
       inclination: -0.22,
       yaw: -0.05,
       phase: 2.12,
       period: 18,
-      size: 0.24,
+      size: 0.21,
       logo: "assets/logos/jurisfield.svg",
       textureStyle: "terrain",
     },
@@ -68,13 +68,13 @@ async function initialiseUniverse() {
       key: "atlas",
       color: 0x6257ff,
       deep: 0x11104a,
-      radius: 2.35,
+      radius: 1.8,
       flatten: 0.42,
       inclination: 0.16,
       yaw: -0.16,
-      phase: 0.82,
+      phase: 0.15,
       period: 25,
-      size: 0.3,
+      size: 0.25,
       logo: "assets/logos/atlas.svg",
       textureStyle: "bands",
       ringed: true,
@@ -83,13 +83,13 @@ async function initialiseUniverse() {
       key: "nammatn",
       color: 0xd11f27,
       deep: 0x3c080b,
-      radius: 2.85,
+      radius: 2.22,
       flatten: 0.45,
       inclination: -0.12,
       yaw: 0.13,
-      phase: 4.82,
+      phase: 5.65,
       period: 34,
-      size: 0.26,
+      size: 0.225,
       logo: "assets/logos/nammatn.svg",
       textureStyle: "craters",
     },
@@ -97,13 +97,13 @@ async function initialiseUniverse() {
       key: "mapsmith",
       color: 0x34bbb4,
       deep: 0x073338,
-      radius: 3.35,
+      radius: 2.62,
       flatten: 0.48,
       inclination: 0.21,
       yaw: 0.08,
       phase: 3.47,
       period: 44,
-      size: 0.22,
+      size: 0.19,
       logo: "assets/logos/mapsmith.svg",
       textureStyle: "grid",
     },
@@ -200,9 +200,9 @@ async function initialiseUniverse() {
       product.group.position.copy(orbitalPoint);
       product.surface.rotation.y += motionEnabled ? delta * (0.18 + product.radius * 0.018) : 0;
       const selected = product.key === (hoveredProject || activeProject);
-      const desiredScale = selected ? 1.18 : 1;
+      const desiredScale = selected ? 1.08 : 1;
       product.group.scale.lerp(new THREE.Vector3(desiredScale, desiredScale, desiredScale), 0.08);
-      product.glow.material.opacity += ((selected ? 0.72 : 0.34) - product.glow.material.opacity) * 0.08;
+      product.glow.material.opacity += ((selected ? 0.58 : 0.3) - product.glow.material.opacity) * 0.08;
       product.orbit.line.material.opacity += ((selected ? 0.62 : 0.19) - product.orbit.line.material.opacity) * 0.08;
 
       projected.copy(product.group.position).applyMatrix4(universe.matrixWorld).project(camera);
@@ -290,7 +290,7 @@ function createEarth(textureLoader, maxAnisotropy) {
   group.rotation.x = THREE.MathUtils.degToRad(20.6);
   group.rotation.z = THREE.MathUtils.degToRad(-4.2);
 
-  const geometry = new THREE.SphereGeometry(1.08, 128, 64);
+  const geometry = new THREE.SphereGeometry(0.52, 128, 64);
   const material = new THREE.MeshPhysicalMaterial({
     color: 0x335b98,
     emissive: 0x07101d,
@@ -314,7 +314,7 @@ function createEarth(textureLoader, maxAnisotropy) {
   });
 
   const atmosphere = new THREE.Mesh(
-    new THREE.SphereGeometry(1.128, 96, 48),
+    new THREE.SphereGeometry(0.546, 96, 48),
     new THREE.ShaderMaterial({
       uniforms: {
         glowColor: { value: new THREE.Color(0x4f8cff) },

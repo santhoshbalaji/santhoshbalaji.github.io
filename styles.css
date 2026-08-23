@@ -180,9 +180,9 @@ img { display: block; max-width: 100%; }
 .has-three-universe .solar-orbits, .has-three-universe .gravity-core { visibility: hidden; opacity: 0; }
 .has-three-universe .system-object { display: grid; opacity: 1; cursor: pointer; filter: none; place-items: center; pointer-events: auto; }
 .has-three-universe .system-object::before, .has-three-universe .system-object::after { display: none; }
-.has-three-universe .system-object .object-logo { width: 1.55rem; height: 1.55rem; border-radius: .52rem; background: color-mix(in srgb,var(--space-void) 82%,transparent); box-shadow: 0 .45rem 1rem color-mix(in srgb,var(--space-void) 66%,transparent),0 0 .8rem color-mix(in srgb,var(--object-accent) 24%,transparent); backdrop-filter: blur(8px); }
+.has-three-universe .system-object .object-logo { width: 54%; height: 54%; overflow: visible; border: 0; border-radius: 0; background: transparent; box-shadow: none; backdrop-filter: none; }
 .has-three-universe .system-object .object-logo::before, .has-three-universe .system-object .object-logo::after { display: none; }
-.has-three-universe .system-object .object-logo img { width: 78%; height: 78%; }
+.has-three-universe .system-object .object-logo img { width: 100%; height: 100%; filter: drop-shadow(0 0 .45rem color-mix(in srgb,var(--object-accent) 44%,transparent)); }
 .has-three-universe::before { opacity: .34; }
 .has-three-universe::after { filter: blur(3.4rem); }
 
