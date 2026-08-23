@@ -58,8 +58,8 @@ async function initialiseUniverse() {
       flatten: 0.39,
       inclination: -0.22,
       yaw: -0.05,
-      phase: 2.12,
-      period: 18,
+      phase: 0.38,
+      period: 56,
       size: 0.21,
       logo: "assets/logos/jurisfield.svg",
       textureStyle: "terrain",
@@ -72,8 +72,8 @@ async function initialiseUniverse() {
       flatten: 0.42,
       inclination: 0.16,
       yaw: -0.16,
-      phase: 0.15,
-      period: 25,
+      phase: 2.45,
+      period: 78,
       size: 0.25,
       logo: "assets/logos/atlas.svg",
       textureStyle: "bands",
@@ -87,8 +87,8 @@ async function initialiseUniverse() {
       flatten: 0.45,
       inclination: -0.12,
       yaw: 0.13,
-      phase: 5.65,
-      period: 34,
+      phase: 4.78,
+      period: 96,
       size: 0.225,
       logo: "assets/logos/nammatn.svg",
       textureStyle: "craters",
@@ -101,8 +101,8 @@ async function initialiseUniverse() {
       flatten: 0.48,
       inclination: 0.21,
       yaw: 0.08,
-      phase: 3.47,
-      period: 44,
+      phase: 3.65,
+      period: 124,
       size: 0.19,
       logo: "assets/logos/mapsmith.svg",
       textureStyle: "grid",
@@ -193,8 +193,8 @@ async function initialiseUniverse() {
       const angle = product.phase + elapsed * (Math.PI * 2 / product.period);
       const orbitalPoint = new THREE.Vector3(
         Math.cos(angle) * product.radius,
-        0,
-        Math.sin(angle) * product.radius * product.flatten,
+        Math.sin(angle) * product.radius * product.flatten * 0.72,
+        Math.sin(angle) * product.radius * 0.16,
       );
       orbitalPoint.applyEuler(product.orbit.euler);
       product.group.position.copy(orbitalPoint);
@@ -203,7 +203,7 @@ async function initialiseUniverse() {
       const desiredScale = selected ? 1.08 : 1;
       product.group.scale.lerp(new THREE.Vector3(desiredScale, desiredScale, desiredScale), 0.08);
       product.glow.material.opacity += ((selected ? 0.58 : 0.3) - product.glow.material.opacity) * 0.08;
-      product.orbit.line.material.opacity += ((selected ? 0.62 : 0.19) - product.orbit.line.material.opacity) * 0.08;
+      product.orbit.line.material.opacity += ((selected ? 0.06 : 0.012) - product.orbit.line.material.opacity) * 0.08;
 
       projected.copy(product.group.position).applyMatrix4(universe.matrixWorld).project(camera);
       const anchor = anchors.get(product.key);
@@ -355,8 +355,8 @@ function createOrbit(definition, active) {
     const angle = index / 256 * Math.PI * 2;
     points.push(new THREE.Vector3(
       Math.cos(angle) * definition.radius,
-      0,
-      Math.sin(angle) * definition.radius * definition.flatten,
+      Math.sin(angle) * definition.radius * definition.flatten * 0.72,
+      Math.sin(angle) * definition.radius * 0.16,
     ));
   }
   const euler = new THREE.Euler(definition.inclination, definition.yaw, definition.inclination * -0.28, "YXZ");
@@ -365,7 +365,7 @@ function createOrbit(definition, active) {
   const material = new THREE.LineBasicMaterial({
     color: definition.color,
     transparent: true,
-    opacity: active ? 0.58 : 0.19,
+    opacity: active ? 0.06 : 0.012,
     depthWrite: false,
   });
   const line = new THREE.LineLoop(geometry, material);
