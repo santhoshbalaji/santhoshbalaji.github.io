@@ -4,6 +4,8 @@ const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
 const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
 const theme = await readFile(new URL("../theme.css", import.meta.url), "utf8");
 const script = await readFile(new URL("../script.js", import.meta.url), "utf8");
+const analytics = await readFile(new URL("../analytics.js", import.meta.url), "utf8");
+const privacy = await readFile(new URL("../privacy.html", import.meta.url), "utf8");
 const cname = await readFile(new URL("../CNAME", import.meta.url), "utf8");
 const logoPaths = ["jurisfield.svg", "atlas.svg", "nammatn.svg", "mapsmith.svg", "zoho-official.svg", "forest-work.svg"];
 let logosPresent = true;
@@ -53,6 +55,11 @@ const checks = [
   [html.includes('href="#contact"') && html.includes('id="contact"'), "contact anchor resolves"],
   [html.includes("mailto:contact@santhoshbalaji.cloud") && html.includes('data-email="contact@santhoshbalaji.cloud"') && !html.includes("santhoshbalaji7676@gmail.com"), "contact email is wired"],
   [html.includes("https://x.com/SanthoshBala_S") && html.includes("https://linkedin.com/in/santhoshbalajis") && html.includes("https://github.com/santhoshbalaji") && html.includes('class="social-links"') && html.includes('class="footer-links"'), "social profiles are linked in contact and footer"],
+  [html.includes('href="privacy.html"') && privacy.includes("<title>Privacy — Santhosh Balaji S</title>") && privacy.includes('href="index.html"'), "privacy notice is linked and provides a clear return path"],
+  [privacy.includes("Analytics cookies</dt><dd>None") && privacy.includes("Advertising</dt><dd>None") && privacy.includes("Visitor profiles</dt><dd>None") && privacy.includes("Global Privacy Control") && privacy.includes("Do Not Track") && privacy.includes("unsampled beacon data for seven days") && privacy.includes("previous six months"), "privacy notice states the no-cookie boundary, retention, and browser choices"],
+  [html.includes('src="analytics.js?v=1"') && privacy.includes('src="analytics.js?v=1"') && analytics.includes('window.location.hostname === "santhoshbalaji.cloud"') && analytics.includes("static.cloudflareinsights.com/beacon.min.js"), "cookieless analytics is loaded only through the production guard"],
+  [analytics.includes("navigator.globalPrivacyControl === true") && analytics.includes('navigator.doNotTrack === "1"') && analytics.includes('window.doNotTrack === "1"') && analytics.includes('navigator.msDoNotTrack === "1"'), "analytics honors Global Privacy Control and Do Not Track signals"],
+  [![html, privacy, analytics, script].some((source) => /document\.cookie|localStorage|sessionStorage|googletagmanager|google-analytics\.com|connect\.facebook\.net|clarity\.ms|hotjar/i.test(source)), "site code contains no cookie, browser-storage, advertising, or invasive analytics hooks"],
   [html.includes("JurisField") && html.includes("Atlas") && html.includes("NammaTN") && html.includes("MapSmith"), "all four systems are presented"],
   [html.includes("https://atlas.santhoshbalaji.cloud/") && html.includes("https://nammatn.in/"), "live product URLs are configured"],
   [html.includes("Zoho Corporation") && html.includes("Tamil Nadu Forest Department") && html.includes("Founder &amp; Product Engineer"), "career trajectory is represented"],
@@ -70,7 +77,7 @@ const checks = [
   [galaxyPresent && css.includes('url("assets/galaxy-black-field.jpg")') && css.includes("#starfield") && !html.includes('class="galactic-plane"') && !html.includes('class="distant-world"'), "pitch-black generated galaxy image replaces the synthetic purple background objects"],
   [css.includes("font-size: clamp(3.5rem, 5.35vw, 6.1rem)") && css.includes("font-size: clamp(2.65rem, 10.8vw, 3.45rem)"), "hero headline scale is reduced across desktop and mobile"],
   [theme.includes("--space-void: #000000") && css.includes(".work-section { overflow: hidden; padding-bottom: clamp(3rem,5vw,5rem); background: transparent; }") && css.includes(".contact-section { display: grid; grid-template-columns: 0.9fr 1.1fr; align-items: center; min-height: 39rem; overflow: hidden; background: transparent;") && css.includes("background: transparent; font: 580 0.5rem var(--font-orbit);"), "pitch-black galaxy canvas continues behind every page section"],
-  [html.includes('theme.css?v=4') && html.includes('styles.css?v=38'), "continuous background theme assets are cache-busted"],
+  [html.includes('theme.css?v=4') && html.includes('styles.css?v=39') && privacy.includes('styles.css?v=39'), "continuous background theme assets are cache-busted"],
   [script.includes("twinkle") && script.includes("spark") && script.includes("const flare"), "stars include restrained twinkle and bright-star diffraction"],
   [html.includes('id="gravity-stage"') && html.includes('class="system-object object-jurisfield'), "interactive gravity system is present"],
   [(html.match(/data-orbit-planet=/g) || []).length === 4 && (html.match(/data-orbit-path=/g) || []).length === 4 && script.includes("updateProductOrbits") && script.includes("orbitalElapsed"), "four independently animated product orbits are wired"],
