@@ -5,5 +5,8 @@
   "scripts": {
     "dev": "python3 -m http.server 4173",
     "test": "node scripts/verify.mjs"
+  },
+  "dependencies": {
+    "three": "0.185.1"
   }
 }

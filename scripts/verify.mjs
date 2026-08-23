@@ -4,8 +4,10 @@ const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
 const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
 const theme = await readFile(new URL("../theme.css", import.meta.url), "utf8");
 const script = await readFile(new URL("../script.js", import.meta.url), "utf8");
+const universe = await readFile(new URL("../three-universe.js", import.meta.url), "utf8");
 const analytics = await readFile(new URL("../analytics.js", import.meta.url), "utf8");
 const privacy = await readFile(new URL("../privacy.html", import.meta.url), "utf8");
+const packageJson = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
 const cname = await readFile(new URL("../CNAME", import.meta.url), "utf8");
 const logoPaths = ["jurisfield.svg", "atlas.svg", "nammatn.svg", "mapsmith.svg", "zoho-official.svg", "forest-work.svg"];
 let logosPresent = true;
@@ -45,6 +47,15 @@ try {
 } catch {
   noJekyllPresent = false;
 }
+let threeRuntimePresent = true;
+try {
+  await Promise.all([
+    access(new URL("../vendor/three.module.min.js", import.meta.url)),
+    access(new URL("../vendor/three.core.min.js", import.meta.url)),
+  ]);
+} catch {
+  threeRuntimePresent = false;
+}
 
 const checks = [
   [html.includes("<title>Santhosh Balaji S — Software Developer</title>"), "document has a developer-focused title"],
@@ -77,16 +88,19 @@ const checks = [
   [galaxyPresent && css.includes('url("assets/galaxy-black-field.jpg")') && css.includes("#starfield") && !html.includes('class="galactic-plane"') && !html.includes('class="distant-world"'), "pitch-black generated galaxy image replaces the synthetic purple background objects"],
   [css.includes("font-size: clamp(3.5rem, 5.35vw, 6.1rem)") && css.includes("font-size: clamp(2.65rem, 10.8vw, 3.45rem)"), "hero headline scale is reduced across desktop and mobile"],
   [theme.includes("--space-void: #000000") && css.includes(".work-section { overflow: hidden; padding-bottom: clamp(3rem,5vw,5rem); background: transparent; }") && css.includes(".contact-section { display: grid; grid-template-columns: 0.9fr 1.1fr; align-items: center; min-height: 39rem; overflow: hidden; background: transparent;") && css.includes("background: transparent; font: 580 0.5rem var(--font-orbit);"), "pitch-black galaxy canvas continues behind every page section"],
-  [html.includes('theme.css?v=4') && html.includes('styles.css?v=39') && privacy.includes('styles.css?v=39'), "continuous background theme assets are cache-busted"],
+  [html.includes('theme.css?v=4') && html.includes('styles.css?v=40') && privacy.includes('styles.css?v=39'), "continuous background theme assets are cache-busted"],
   [script.includes("twinkle") && script.includes("spark") && script.includes("const flare"), "stars include restrained twinkle and bright-star diffraction"],
   [html.includes('id="gravity-stage"') && html.includes('class="system-object object-jurisfield'), "interactive gravity system is present"],
   [(html.match(/data-orbit-planet=/g) || []).length === 4 && (html.match(/data-orbit-path=/g) || []).length === 4 && script.includes("updateProductOrbits") && script.includes("orbitalElapsed"), "four independently animated product orbits are wired"],
+  [packageJson.dependencies?.three === "0.185.1" && threeRuntimePresent && html.includes('id="universe-render"') && html.includes('type="module" src="three-universe.js?v=1"') && universe.includes('from "./vendor/three.module.min.js"'), "pinned, locally hosted Three.js runtime powers the 3D universe"],
+  [universe.includes("new THREE.SphereGeometry(1.08, 128, 64)") && universe.includes("THREE.MeshPhysicalMaterial") && universe.includes("THREE.ACESFilmicToneMapping") && universe.includes("THREE.SRGBColorSpace") && universe.includes("texture.offset.x = 0.469"), "India-facing Earth uses high-segment geometry, color management, and physical lighting"],
+  [(universe.match(/radius: [2-4]\./g) || []).length === 4 && universe.includes("new THREE.LineLoop") && universe.includes("new THREE.Raycaster") && universe.includes("ResizeObserver") && script.includes('CustomEvent("motion:change"') && universe.includes('addEventListener("motion:change"'), "3D product worlds use inclined orbital paths, raycast interaction, responsive rendering, and motion control"],
   [html.includes('id="orbit-readout-name"') && html.includes('data-active-orbit="jurisfield"') && script.includes("setActiveOrbit"), "stable active-world telemetry is wired"],
   [script.includes('const activeOrbitOrder = ["jurisfield", "atlas", "nammatn", "mapsmith"]') && script.includes("const activeOrbitCycleMs = 3200") && script.includes("scheduleActiveOrbitCycle") && script.includes("activeOrbitInteractionLocked") && script.includes("stopActiveOrbitCycle"), "active world cycles round-robin every 3.2 seconds with interaction and motion safeguards"],
   [earthPresent && html.includes('id="earth-render"') && html.includes('data-focus="India"') && html.includes('data-texture="assets/earth-cloudless-surface.jpg"') && html.includes("cloud-free Blue Marble") && html.includes("India-facing Earth at the centre") && script.includes("renderCloudlessEarth") && script.includes("const earthFocus = { latitude: 20.6, longitude: 78.9 }") && script.includes("const specular") && script.includes("const atmosphere") && !script.includes("centreLongitude = 48") && !html.includes('src="assets/earth-blue-marble.jpg"'), "product system renders a realistically lit, cloud-free, India-facing Blue Marble globe"],
   [html.includes('id="mission-explorer"') && html.includes('class="mission-emblem"') && html.includes('class="mission-number"') && !html.includes('class="planet-viewport"'), "editorial mission index and engineering dossier are present"],
   [html.includes('id="motion-control"') && script.includes("setMotion"), "user motion control is wired"],
-  [html.includes('script.js?v=17'), "round-robin interaction script is cache-busted"],
+  [html.includes('script.js?v=18'), "round-robin interaction script is cache-busted"],
   [cname.trim() === "santhoshbalaji.cloud" && noJekyllPresent, "GitHub Pages custom domain files are present"],
   [html.includes('class="career-trace reveal"') && html.includes('data-active-career="independent"') && html.includes('aria-orientation="horizontal"') && html.includes('class="career-note"') && !html.includes('class="experience-section"') && !css.includes(".career-path::before") && script.includes("careerTrace.dataset.activeCareer"), "subtle embedded career trace is wired without text-crossing rails"],
   [!html.includes('class="hero-manifest"') && !css.includes(".hero-manifest"), "hero controls are free of absolute stat overlays"],

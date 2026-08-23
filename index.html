@@ -20,8 +20,9 @@
     <title>Santhosh Balaji S — Software Developer</title>
     <link rel="icon" href="favicon.svg?v=10" type="image/svg+xml" />
     <link rel="stylesheet" href="theme.css?v=4" />
-    <link rel="stylesheet" href="styles.css?v=39" />
-    <script src="script.js?v=17" defer></script>
+    <link rel="stylesheet" href="styles.css?v=40" />
+    <script src="script.js?v=18" defer></script>
+    <script type="module" src="three-universe.js?v=1"></script>
     <script src="analytics.js?v=1" defer></script>
   </head>
   <body>
@@ -100,7 +101,8 @@
           </div>
         </div>
 
-        <div class="gravity-stage reveal" id="gravity-stage" data-active-orbit="jurisfield" aria-label="Interactive product orrery with an India-facing Earth at the centre">
+        <div class="gravity-stage reveal" id="gravity-stage" data-active-orbit="jurisfield" aria-label="Interactive 3D product orrery with an India-facing Earth at the centre">
+          <canvas class="universe-render" id="universe-render" aria-hidden="true"></canvas>
           <div class="solar-orbits" aria-hidden="true">
             <span class="ecliptic-disk"></span>
             <i class="solar-orbit orbit-jurisfield" data-orbit-path="jurisfield"></i>
@@ -121,6 +123,7 @@
                 height="480"
                 data-focus="India"
                 data-texture="assets/earth-cloudless-surface.jpg"
+                data-source="NASA Blue Marble Next Generation, December 2004"
               ></canvas>
             </span>
           </div>
@@ -148,7 +151,7 @@
             <span class="object-logo"><img src="assets/logos/mapsmith.svg" alt="" /></span>
           </a>
 
-          <div class="stage-instruction"><span aria-hidden="true">●</span> Products in live orbit</div>
+          <div class="stage-instruction"><span aria-hidden="true">●</span> Drag to inspect · select a world</div>
         </div>
 
       </section>

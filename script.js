@@ -225,6 +225,7 @@ function setActiveOrbit(project) {
   orbitReadoutName.textContent = data.name;
   orbitReadoutClass.textContent = data.orbitClass;
   orbitReadoutNote.textContent = data.orbitNote;
+  window.dispatchEvent(new CustomEvent("orbit:active", { detail: { project } }));
 }
 
 function stopActiveOrbitCycle() {
@@ -259,6 +260,16 @@ orbitPlanets.forEach((planet) => {
   planet.addEventListener("pointerleave", release);
   planet.addEventListener("focus", activate);
   planet.addEventListener("blur", release);
+});
+window.addEventListener("universe:active", (event) => {
+  if (!event.detail?.project) return;
+  activeOrbitInteractionLocked = true;
+  stopActiveOrbitCycle();
+  setActiveOrbit(event.detail.project);
+});
+window.addEventListener("universe:release", () => {
+  activeOrbitInteractionLocked = false;
+  scheduleActiveOrbitCycle();
 });
 setActiveOrbit("jurisfield");
 scheduleActiveOrbitCycle();
@@ -332,7 +343,7 @@ function drawStarfield(timestamp = performance.now()) {
 }
 
 function updateProductOrbits(elapsed = orbitalElapsed) {
-  if (!gravityStage) return;
+  if (!gravityStage || gravityStage.classList.contains("has-three-universe")) return;
   const bounds = gravityStage.getBoundingClientRect();
   if (!bounds.width || !bounds.height) return;
 
@@ -397,7 +408,7 @@ sizeStarfield();
 startStarfield();
 
 gravityStage.addEventListener("pointermove", (event) => {
-  if (!motionRunning) return;
+  if (!motionRunning || gravityStage.classList.contains("has-three-universe")) return;
   const bounds = gravityStage.getBoundingClientRect();
   const x = (event.clientX - bounds.left) / bounds.width - 0.5;
   const y = (event.clientY - bounds.top) / bounds.height - 0.5;
@@ -418,6 +429,7 @@ function setMotion(running) {
   startStarfield();
   if (motionRunning) scheduleActiveOrbitCycle();
   else stopActiveOrbitCycle();
+  window.dispatchEvent(new CustomEvent("motion:change", { detail: { running: motionRunning } }));
 }
 motionControl.addEventListener("click", () => setMotion(!motionRunning));
 prefersReducedMotion.addEventListener("change", () => setMotion(!prefersReducedMotion.matches));
