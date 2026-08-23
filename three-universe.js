@@ -113,10 +113,11 @@ async function initialiseUniverse() {
     [...stage.querySelectorAll("[data-orbit-planet]")].map((anchor) => [anchor.dataset.orbitPlanet, anchor]),
   );
   const resetButton = stage.querySelector("#universe-reset");
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
   let activeProject = stage.dataset.activeOrbit || "jurisfield";
   let hoveredProject = null;
   let motionEnabled = document.documentElement.dataset.motion !== "paused"
-    && !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    && !reducedMotion.matches;
   let elapsed = 0;
   let lastFrame = performance.now();
   let animationFrame = 0;
@@ -138,6 +139,12 @@ async function initialiseUniverse() {
   let pinchStartZoom = 1;
   let pinching = false;
   let sceneVisible = true;
+  let discoveryDismissed = false;
+  let discoveryRevealTimer = 0;
+  let discoveryReturnTimer = 0;
+  let discoveryHideTimer = 0;
+  let discoveryNudgeActive = false;
+  let discoveryScheduled = false;
   const activePointers = new Map();
 
   stage.dataset.threeVersion = THREE.REVISION;
@@ -290,6 +297,47 @@ async function initialiseUniverse() {
     render(performance.now(), true);
   }
 
+  function dismissDiscovery(reason = "interaction") {
+    if (discoveryDismissed) return;
+    discoveryDismissed = true;
+    window.clearTimeout(discoveryRevealTimer);
+    window.clearTimeout(discoveryReturnTimer);
+    window.clearTimeout(discoveryHideTimer);
+    if (discoveryNudgeActive) {
+      targetRotationX = universe.rotation.x;
+      targetRotationY = universe.rotation.y;
+      discoveryNudgeActive = false;
+    }
+    stage.dataset.threeDiscovery = "dismissed";
+    stage.dataset.threeDiscoveryReason = reason;
+  }
+
+  function revealDiscovery() {
+    if (discoveryDismissed || stage.dataset.threeState !== "ready") return;
+    stage.dataset.threeDiscovery = "visible";
+    if (motionEnabled && !reducedMotion.matches) {
+      discoveryNudgeActive = true;
+      targetRotationY = defaultRotationY + 0.075;
+      render(performance.now(), true);
+      discoveryReturnTimer = window.setTimeout(() => {
+        if (discoveryDismissed || dragging) return;
+        targetRotationY = defaultRotationY;
+        discoveryNudgeActive = false;
+        render(performance.now(), true);
+      }, 780);
+    }
+    discoveryHideTimer = window.setTimeout(() => dismissDiscovery("timeout"), 7200);
+  }
+
+  function scheduleDiscovery() {
+    if (discoveryDismissed || discoveryScheduled || stage.dataset.threeState !== "ready") return;
+    const bounds = stage.getBoundingClientRect();
+    const visibleHeight = Math.max(0, Math.min(bounds.bottom, window.innerHeight) - Math.max(bounds.top, 0));
+    if (visibleHeight < Math.min(140, bounds.height * 0.28)) return;
+    discoveryScheduled = true;
+    discoveryRevealTimer = window.setTimeout(revealDiscovery, 560);
+  }
+
   canvas.addEventListener("pointermove", (event) => {
     if (activePointers.has(event.pointerId)) {
       activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
@@ -332,6 +380,7 @@ async function initialiseUniverse() {
 
   canvas.addEventListener("pointerdown", (event) => {
     if (event.button !== 0) return;
+    dismissDiscovery("pointer");
     activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
     if (activePointers.size === 2) {
       pinching = true;
@@ -380,18 +429,27 @@ async function initialiseUniverse() {
 
   canvas.addEventListener("wheel", (event) => {
     event.preventDefault();
+    dismissDiscovery("zoom");
     targetZoom = THREE.MathUtils.clamp(targetZoom + Math.sign(event.deltaY) * 0.085, 0.72, 1.48);
     render(performance.now(), true);
   }, { passive: false });
 
-  canvas.addEventListener("dblclick", resetView);
-  resetButton?.addEventListener("click", resetView);
+  canvas.addEventListener("dblclick", () => {
+    dismissDiscovery("reset");
+    resetView();
+  });
+  resetButton?.addEventListener("click", () => {
+    dismissDiscovery("reset");
+    resetView();
+  });
+  anchors.forEach((anchor) => anchor.addEventListener("pointerdown", () => dismissDiscovery("planet")));
 
   canvas.addEventListener("keydown", (event) => {
     const key = event.key.toLowerCase();
     const handled = ["arrowleft", "arrowright", "arrowup", "arrowdown", "+", "=", "-", "_", "r", "0"].includes(key);
     if (!handled) return;
     event.preventDefault();
+    dismissDiscovery("keyboard");
     if (key === "arrowleft") targetRotationY -= 0.12;
     if (key === "arrowright") targetRotationY += 0.12;
     if (key === "arrowup") targetRotationX -= 0.1;
@@ -417,6 +475,12 @@ async function initialiseUniverse() {
 
   window.addEventListener("motion:change", (event) => {
     motionEnabled = Boolean(event.detail?.running);
+    if (!motionEnabled && discoveryNudgeActive) {
+      window.clearTimeout(discoveryReturnTimer);
+      targetRotationX = universe.rotation.x;
+      targetRotationY = universe.rotation.y;
+      discoveryNudgeActive = false;
+    }
     lastFrame = performance.now();
     render(lastFrame, true);
   });
@@ -438,6 +502,7 @@ async function initialiseUniverse() {
       window.cancelAnimationFrame(animationFrame);
       return;
     }
+    scheduleDiscovery();
     lastFrame = performance.now();
     render(lastFrame, true);
   }, { threshold: 0.02 });
@@ -452,6 +517,7 @@ async function initialiseUniverse() {
   stage.classList.add("has-three-universe", "has-product-orrery");
   stage.dataset.threeInitMs = String(Math.round(performance.now() - initialisationStarted));
   stage.dataset.threeState = "ready";
+  scheduleDiscovery();
 }
 
 function createProductUniverse(textureLoader, maxAnisotropy, productDefinitions, sunDirection) {

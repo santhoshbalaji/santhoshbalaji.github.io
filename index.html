@@ -20,8 +20,8 @@
     <title>Santhosh Balaji S — Software Developer</title>
     <link rel="icon" href="favicon.svg?v=10" type="image/svg+xml" />
     <link rel="stylesheet" href="theme.css?v=4" />
-    <link rel="stylesheet" href="styles.css?v=55" />
-    <script type="module" src="three-universe.js?v=28"></script>
+    <link rel="stylesheet" href="styles.css?v=56" />
+    <script type="module" src="three-universe.js?v=29"></script>
     <script src="script.js?v=21" defer></script>
     <script src="analytics.js?v=1" defer></script>
     <noscript>
@@ -32,8 +32,7 @@
         #gravity-stage[data-three-state="booting"] .gravity-core,
         #gravity-stage[data-three-state="booting"] .system-object,
         #gravity-stage[data-three-state="booting"] .orbit-readout,
-        #gravity-stage[data-three-state="booting"] .product-model-note,
-        #gravity-stage[data-three-state="booting"] .stage-controls { visibility: visible; opacity: 1; pointer-events: auto; }
+        #gravity-stage[data-three-state="booting"] .product-model-note { visibility: visible; opacity: 1; pointer-events: auto; }
       </style>
     </noscript>
   </head>
@@ -113,7 +112,7 @@
           </div>
         </div>
 
-        <div class="gravity-stage reveal" id="gravity-stage" data-active-orbit="jurisfield" data-three-state="booting" aria-label="Interactive 3D product orrery with JurisField, Atlas, NammaTN, and MapSmith orbiting an India-facing Earth">
+        <div class="gravity-stage reveal" id="gravity-stage" data-active-orbit="jurisfield" data-three-state="booting" data-three-discovery="pending" aria-label="Interactive 3D product orrery with JurisField, Atlas, NammaTN, and MapSmith orbiting an India-facing Earth">
           <canvas
             class="universe-render"
             id="universe-render"
@@ -124,6 +123,13 @@
           <div class="universe-boot" aria-hidden="true">
             <span class="universe-boot-signal"><i></i></span>
             <small>Establishing product orbit</small>
+          </div>
+          <div class="universe-discovery" id="universe-discovery" aria-hidden="true">
+            <span class="universe-discovery-mark"><i></i></span>
+            <span class="universe-discovery-copy">
+              <strong>Explore in 3D</strong>
+              <small>Drag anywhere to orbit</small>
+            </span>
           </div>
           <div class="solar-orbits" aria-hidden="true">
             <span class="ecliptic-disk"></span>
@@ -159,7 +165,11 @@
             <span class="orbit-readout-hint">Hover to identify · click to inspect</span>
           </aside>
 
-          <p class="product-model-note"><span>Product orrery / 4 worlds</span><small>Earth-centred · fully interactive</small></p>
+          <p class="product-model-note">
+            <span class="product-model-fallback">Product map / 4 worlds</span>
+            <span class="product-model-three">Interactive 3D / 4 worlds</span>
+            <small>Select a planet to inspect</small>
+          </p>
 
           <a class="system-object object-jurisfield" href="#work" data-select-project="jurisfield" data-orbit-planet="jurisfield" aria-label="Explore JurisField">
             <span class="object-logo"><img src="assets/logos/jurisfield.svg" alt="" /></span>
