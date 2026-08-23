@@ -97,6 +97,14 @@ careerTabs.forEach((tab, index) => {
 const canvas = document.querySelector("#starfield");
 const context = canvas.getContext("2d", { alpha: true });
 const gravityStage = document.querySelector("#gravity-stage");
+if (gravityStage?.dataset.threeState === "booting") {
+  window.__portfolioUniverseBootTimer = window.setTimeout(() => {
+    if (gravityStage.dataset.threeState !== "booting") return;
+    gravityStage.dataset.threeState = "fallback";
+    const universeCanvas = document.querySelector("#universe-render");
+    if (universeCanvas) universeCanvas.hidden = true;
+  }, 8000);
+}
 const orbitPlanets = [...document.querySelectorAll("[data-orbit-planet]")];
 const orbitPaths = new Map(
   [...document.querySelectorAll("[data-orbit-path]")].map((path) => [path.dataset.orbitPath, path]),

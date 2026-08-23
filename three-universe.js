@@ -4,7 +4,10 @@ const stage = document.querySelector("#gravity-stage");
 const canvas = document.querySelector("#universe-render");
 
 if (stage && canvas) {
+  stage.dataset.threeState = "booting";
   initialiseUniverse().catch((error) => {
+    window.clearTimeout(window.__portfolioUniverseBootTimer);
+    stage.classList.remove("has-three-universe", "has-product-orrery");
     stage.dataset.threeState = "fallback";
     canvas.hidden = true;
     console.warn("3D universe unavailable; using the accessible CSS fallback.", error);
@@ -137,8 +140,6 @@ async function initialiseUniverse() {
   let sceneVisible = true;
   const activePointers = new Map();
 
-  stage.dataset.threeState = "ready";
-  stage.dataset.threeInitMs = String(Math.round(performance.now() - initialisationStarted));
   stage.dataset.threeVersion = THREE.REVISION;
   universe.rotation.set(defaultRotationX, defaultRotationY, 0);
   stage.dataset.threeDepth = "product-orbits";
@@ -150,8 +151,6 @@ async function initialiseUniverse() {
   stage.dataset.threeSurfaces = "terrain-roughness-atmosphere";
   stage.dataset.threeInteraction = "360-product-orbits";
   stage.dataset.portfolioBodies = "earth-jurisfield-atlas-nammatn-mapsmith";
-  stage.classList.add("has-three-universe", "has-product-orrery");
-
   function resize() {
     syncPixelRatio();
     const width = Math.max(1, stage.clientWidth);
@@ -448,6 +447,11 @@ async function initialiseUniverse() {
   resizeObserver.observe(stage);
   resize();
   render(performance.now(), true);
+  window.clearTimeout(window.__portfolioUniverseBootTimer);
+  canvas.hidden = false;
+  stage.classList.add("has-three-universe", "has-product-orrery");
+  stage.dataset.threeInitMs = String(Math.round(performance.now() - initialisationStarted));
+  stage.dataset.threeState = "ready";
 }
 
 function createProductUniverse(textureLoader, maxAnisotropy, productDefinitions, sunDirection) {

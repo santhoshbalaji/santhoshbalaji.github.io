@@ -20,10 +20,22 @@
     <title>Santhosh Balaji S — Software Developer</title>
     <link rel="icon" href="favicon.svg?v=10" type="image/svg+xml" />
     <link rel="stylesheet" href="theme.css?v=4" />
-    <link rel="stylesheet" href="styles.css?v=54" />
-    <script src="script.js?v=20" defer></script>
-    <script type="module" src="three-universe.js?v=27"></script>
+    <link rel="stylesheet" href="styles.css?v=55" />
+    <script type="module" src="three-universe.js?v=28"></script>
+    <script src="script.js?v=21" defer></script>
     <script src="analytics.js?v=1" defer></script>
+    <noscript>
+      <style>
+        #gravity-stage[data-three-state="booting"] .universe-boot,
+        #gravity-stage[data-three-state="booting"] .universe-render { display: none; }
+        #gravity-stage[data-three-state="booting"] .solar-orbits,
+        #gravity-stage[data-three-state="booting"] .gravity-core,
+        #gravity-stage[data-three-state="booting"] .system-object,
+        #gravity-stage[data-three-state="booting"] .orbit-readout,
+        #gravity-stage[data-three-state="booting"] .product-model-note,
+        #gravity-stage[data-three-state="booting"] .stage-controls { visibility: visible; opacity: 1; pointer-events: auto; }
+      </style>
+    </noscript>
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
@@ -101,7 +113,7 @@
           </div>
         </div>
 
-        <div class="gravity-stage reveal" id="gravity-stage" data-active-orbit="jurisfield" aria-label="Interactive 3D product orrery with JurisField, Atlas, NammaTN, and MapSmith orbiting an India-facing Earth">
+        <div class="gravity-stage reveal" id="gravity-stage" data-active-orbit="jurisfield" data-three-state="booting" aria-label="Interactive 3D product orrery with JurisField, Atlas, NammaTN, and MapSmith orbiting an India-facing Earth">
           <canvas
             class="universe-render"
             id="universe-render"
@@ -109,6 +121,10 @@
             role="application"
             aria-label="Interactive 3D product universe. Rotate freely through 360 degrees by dragging, scroll or pinch to zoom, use arrow keys to rotate, plus and minus to zoom, and R to reset."
           ></canvas>
+          <div class="universe-boot" aria-hidden="true">
+            <span class="universe-boot-signal"><i></i></span>
+            <small>Establishing product orbit</small>
+          </div>
           <div class="solar-orbits" aria-hidden="true">
             <span class="ecliptic-disk"></span>
             <i class="solar-orbit orbit-jurisfield" data-orbit-path="jurisfield"></i>

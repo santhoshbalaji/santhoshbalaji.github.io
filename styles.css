@@ -196,11 +196,21 @@ img { display: block; max-width: 100%; }
 .gravity-stage::before { position: absolute; inset: 7% 0 11%; z-index: -2; content: ""; border: 1px solid var(--orbit-line); border-radius: 50%; mask-image: linear-gradient(34deg, transparent 9%, black 40%, transparent 88%); transform: rotate(-3deg); }
 .gravity-stage::after { position: absolute; inset: 7% -2%; z-index: -3; content: ""; border-radius: 50%; background: radial-gradient(ellipse, color-mix(in srgb, var(--active-orbit-accent) 13%, transparent), var(--atlas-soft) 29%, transparent 70%); filter: blur(2.8rem); transition: background var(--duration-flight) ease; }
 
-.universe-render { position: absolute; inset: 0; z-index: 4; display: block; width: 100%; height: 100%; cursor: grab; outline: 0; filter: contrast(1.04) saturate(.9); touch-action: none; }
+.universe-render { position: absolute; inset: 0; z-index: 4; display: block; width: 100%; height: 100%; cursor: grab; outline: 0; filter: contrast(1.04) saturate(.9); opacity: 1; touch-action: none; transition: opacity 520ms var(--ease-orbit); }
 .universe-render.is-dragging { cursor: grabbing; }
 .universe-render.is-targeting { cursor: pointer; }
 .universe-render:focus-visible { outline: 0; }
 .universe-render[hidden] { display: none; }
+.universe-boot { position: absolute; top: 50%; left: 60%; z-index: 12; display: grid; justify-items: center; gap: .72rem; visibility: hidden; color: var(--dust); opacity: 0; pointer-events: none; transform: translate(-50%,-50%); transition: visibility 0s linear 420ms,opacity 320ms ease; }
+.universe-boot-signal { position: relative; display: block; width: 3.15rem; height: 3.15rem; border: 1px solid color-mix(in srgb,var(--signal-blue-bright) 22%,transparent); border-radius: 50%; box-shadow: 0 0 2.2rem color-mix(in srgb,var(--signal-blue) 10%,transparent); }
+.universe-boot-signal::before { position: absolute; inset: .42rem; content: ""; border: 1px dashed color-mix(in srgb,var(--moonlight) 24%,transparent); border-radius: inherit; animation: universe-acquire 2.8s linear infinite; }
+.universe-boot-signal i { position: absolute; top: 50%; left: 50%; width: .34rem; height: .34rem; border-radius: 50%; background: var(--earth-atmosphere); box-shadow: 0 0 .85rem var(--earth-atmosphere); transform: translate(-50%,-50%); }
+.universe-boot small { font: 580 .36rem var(--font-orbit); letter-spacing: .085em; text-transform: uppercase; }
+.gravity-stage[data-three-state="booting"] .universe-render { opacity: 0; pointer-events: none; }
+.gravity-stage[data-three-state="booting"] .solar-orbits, .gravity-stage[data-three-state="booting"] .gravity-core, .gravity-stage[data-three-state="booting"] .system-object { visibility: hidden; opacity: 0; pointer-events: none; }
+.gravity-stage[data-three-state="booting"] .orbit-readout, .gravity-stage[data-three-state="booting"] .product-model-note, .gravity-stage[data-three-state="booting"] .stage-controls { visibility: hidden; opacity: 0; pointer-events: none; }
+.gravity-stage[data-three-state="booting"] .universe-boot { visibility: visible; opacity: .78; transition-delay: 0s; }
+.gravity-stage[data-three-state="fallback"] .universe-boot, .gravity-stage[data-three-state="ready"] .universe-boot { visibility: hidden; opacity: 0; }
 .has-three-universe .solar-orbits { visibility: hidden; opacity: 0; }
 .has-three-universe .gravity-core { z-index: 7; visibility: visible; opacity: 1; pointer-events: none; }
 .has-three-universe .gravity-core .earth-globe { visibility: hidden; opacity: 0; }
@@ -513,6 +523,7 @@ img { display: block; max-width: 100%; }
 [data-motion="paused"] *, [data-motion="paused"] *::before, [data-motion="paused"] *::after { animation-play-state: paused !important; }
 
 @keyframes orbit-spin { to { transform: rotate(360deg); } }
+@keyframes universe-acquire { to { transform: rotate(360deg); } }
 @keyframes core-breathe { 0%, 100% { opacity: .55; transform: scale(.92); } 50% { opacity: 1; transform: scale(1.08); } }
 @keyframes transmission-wave { 0% { opacity: 0; transform: translate(-50%, -50%) scale(.72); } 35% { opacity: .75; } 100% { opacity: 0; transform: translate(-50%, -50%) scale(1.08); } }
 @keyframes readout-enter { from { opacity: 0; transform: translateX(1rem); } to { opacity: 1; transform: none; } }
@@ -559,6 +570,7 @@ img { display: block; max-width: 100%; }
   .hero .orbit-readout { top: 2%; left: 1%; width: min(10rem,41%); }
   .hero .product-model-note { top: 2%; right: 1%; }
   .hero .stage-controls { right: 3%; bottom: 5%; }
+  .universe-boot { left: 50%; }
   .section-heading { grid-template-columns: 1fr; gap: 1.3rem; }
   .section-heading > .section-label { padding-top: 0; }
   .section-heading-copy { align-items: flex-start; flex-direction: row; }
