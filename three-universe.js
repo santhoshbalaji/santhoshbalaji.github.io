@@ -120,6 +120,7 @@ async function initialiseUniverse() {
   let baseCameraDistance = 1200;
   let currentZoom = 1;
   let targetZoom = 1;
+  let currentFieldScale = 1;
   let dragging = false;
   let pointerDown = null;
   let dragDistance = 0;
@@ -143,6 +144,7 @@ async function initialiseUniverse() {
   stage.dataset.threeDepth = "product-orbits";
   stage.dataset.threeOcclusion = "depth-buffered-logos";
   stage.dataset.threeOrbitBounds = "planet-safe";
+  stage.dataset.threeAdaptiveFit = "rotation-safe";
   stage.dataset.threeLighting = "single-sun-physical";
   stage.dataset.threeSurfaces = "terrain-roughness-atmosphere";
   stage.dataset.threeInteraction = "360-product-orbits";
@@ -210,6 +212,12 @@ async function initialiseUniverse() {
     universe.rotation.y += (targetRotationY - universe.rotation.y) * 0.075;
     currentZoom += (targetZoom - currentZoom) * 0.09;
     camera.position.z = baseCameraDistance * currentZoom;
+    const depthToVerticalRisk = Math.abs(Math.sin(universe.rotation.x)) * Math.abs(Math.sin(universe.rotation.y));
+    const targetFieldScale = stage.dataset.threeOrbitField === "full-hero"
+      ? 1 - depthToVerticalRisk * 0.38
+      : 1;
+    currentFieldScale += (targetFieldScale - currentFieldScale) * 0.09;
+    universe.scale.setScalar(currentFieldScale);
 
     earth.mesh.rotation.y = THREE.MathUtils.degToRad(0.8) * Math.sin(elapsed * 0.16);
     earth.atmosphere.material.uniforms.viewVector.value.copy(camera.position);
@@ -265,6 +273,7 @@ async function initialiseUniverse() {
     const unsettled = Math.abs(targetRotationX - universe.rotation.x) > 0.0005
       || Math.abs(targetRotationY - universe.rotation.y) > 0.0005
       || Math.abs(targetZoom - currentZoom) > 0.0005
+      || Math.abs(targetFieldScale - currentFieldScale) > 0.0005
       || Math.abs(angularVelocityX) > 0.00002
       || Math.abs(angularVelocityY) > 0.00002;
     if (sceneVisible && (motionEnabled || dragging || force || unsettled)) {
@@ -477,7 +486,7 @@ function createProductUniverse(textureLoader, maxAnisotropy, productDefinitions,
     const product = createProductWorld(definition, textureLoader, maxAnisotropy, sunDirection);
     orbitPlane.add(product.group);
     group.add(orbitPlane);
-    return { ...definition, ...product, ...spec, orbitPlane, orbitLine, orbitRadius: 1 };
+    return { ...definition, ...product, ...spec, orbitPlane, orbitLine, orbitRadiusX: 1, orbitRadiusY: 1 };
   });
 
   const depthRandom = seededRandom(20260824);
@@ -505,31 +514,42 @@ function createProductUniverse(textureLoader, maxAnisotropy, productDefinitions,
     const extent = Math.min(width, height);
     const compactScale = extent < 430 ? 0.9 : 1;
     const earthRadius = extent * 0.16 * compactScale;
-    const maximumOrbitRatio = Math.max(...products.map((product) => product.radius));
+    const fullField = width > 820;
+    const maximumHorizontalRatio = Math.max(...products.map((product) => product.radius));
+    const maximumVerticalRatio = Math.max(...products.map((product) => product.radius * product.ellipse));
     const edgeReserve = THREE.MathUtils.clamp(extent * 0.085, 42, 64);
-    const perspectiveAllowance = 1.04;
-    const horizontalExtent = (width * 0.5 - edgeReserve) / (maximumOrbitRatio * perspectiveAllowance);
-    const verticalExtent = (height * 0.5 - edgeReserve) / (maximumOrbitRatio * perspectiveAllowance);
-    const safeOrbitExtent = Math.max(180, Math.min(horizontalExtent, verticalExtent));
+    const perspectiveAllowance = 1.06;
+    const centerShiftX = fullField ? width * 0.08 : 0;
+    const horizontalExtent = (width * 0.5 - edgeReserve - Math.abs(centerShiftX))
+      / (maximumHorizontalRatio * perspectiveAllowance);
+    const verticalExtent = (height * 0.5 - edgeReserve)
+      / (maximumVerticalRatio * perspectiveAllowance);
+    const compactOrbitExtent = Math.max(180, Math.min(horizontalExtent, verticalExtent));
+    const orbitExtentX = fullField ? Math.max(260, horizontalExtent) : compactOrbitExtent;
+    const orbitExtentY = fullField ? Math.max(210, Math.min(verticalExtent, orbitExtentX * 0.82)) : compactOrbitExtent;
+    group.position.x = centerShiftX;
     earth.group.scale.setScalar(earthRadius / 0.52);
     earthGlow.scale.setScalar(earthRadius * 2.45);
     products.forEach((product) => {
-      product.orbitRadius = safeOrbitExtent * product.radius;
-      product.orbitLine.scale.set(product.orbitRadius, product.orbitRadius * product.ellipse, 1);
+      product.orbitRadiusX = orbitExtentX * product.radius;
+      product.orbitRadiusY = orbitExtentY * product.radius * product.ellipse;
+      product.orbitLine.scale.set(product.orbitRadiusX, product.orbitRadiusY, 1);
     });
     depthField.scale.set(width * 0.94, height * 0.88, 220);
+    stage.dataset.threeOrbitField = fullField ? "full-hero" : "contained";
+    stage.dataset.threeOrbitShape = fullField ? "extended-ellipses" : "compact-ellipses";
   }
 
   function update(elapsed, delta, activeProject, motionEnabled) {
     products.forEach((product, index) => {
       const angle = product.phase + elapsed * product.speed;
       product.group.position.set(
-        Math.cos(angle) * product.orbitRadius,
-        Math.sin(angle) * product.orbitRadius * product.ellipse,
+        Math.cos(angle) * product.orbitRadiusX,
+        Math.sin(angle) * product.orbitRadiusY,
         0,
       );
       const selected = product.key === activeProject;
-      product.orbitLine.material.opacity += ((selected ? 0.23 : 0.035) - product.orbitLine.material.opacity) * 0.08;
+      product.orbitLine.material.opacity += ((selected ? 0.28 : 0.05) - product.orbitLine.material.opacity) * 0.08;
     });
     earthGlow.material.opacity = 0.052 + Math.sin(elapsed * 0.36) * 0.008;
     if (motionEnabled) depthField.rotation.z -= delta * 0.0012;

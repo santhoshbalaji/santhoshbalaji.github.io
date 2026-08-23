@@ -122,8 +122,9 @@ img { display: block; max-width: 100%; }
 
 .hero {
   position: relative;
+  isolation: isolate;
   display: grid;
-  grid-template-columns: minmax(0, 0.88fr) minmax(36rem, 1.12fr);
+  grid-template-columns: minmax(0, 0.82fr) minmax(36rem, 1.18fr);
   align-items: center;
   width: var(--page-width);
   min-height: min(52rem, 94svh);
@@ -131,6 +132,23 @@ img { display: block; max-width: 100%; }
   padding: calc(var(--header-height) + 2.25rem) 0 clamp(2.5rem,4vh,3.5rem);
   gap: clamp(2rem, 5vw, 5rem);
 }
+
+.hero::before {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  z-index: 1;
+  width: 100vw;
+  content: "";
+  background:
+    linear-gradient(90deg, var(--space-void) 0 14%, rgba(0,0,0,.9) 30%, rgba(0,0,0,.5) 44%, transparent 61%),
+    linear-gradient(180deg, rgba(0,0,0,.28), transparent 24% 82%, rgba(0,0,0,.44));
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+.hero-copy { position: relative; z-index: 3; width: 100%; }
 
 .hero-identity { display: grid; grid-template-columns: 5.35rem minmax(0,1fr); width: min(100%,25rem); margin: 0 0 2rem; align-items: center; gap: 1.15rem; }
 .identity-portrait { position: relative; width: 5.35rem; aspect-ratio: 4 / 5; margin: 0; overflow: hidden; background: var(--space-panel-soft); box-shadow: inset 0 0 0 1px var(--orbit-line-strong),var(--shadow-satellite); clip-path: polygon(0 0,calc(100% - .72rem) 0,100% .72rem,100% 100%,0 100%); }
@@ -155,15 +173,19 @@ img { display: block; max-width: 100%; }
 
 .gravity-stage {
   --active-orbit-accent: var(--jurisfield);
+  --stage-shift-x: -50%;
   --tilt-x: 0deg;
   --tilt-y: 0deg;
-  position: relative;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  z-index: 0;
   isolation: isolate;
-  justify-self: end;
-  width: min(100%, 44rem);
-  aspect-ratio: 1.05;
+  width: 100vw;
+  min-height: 42rem;
   perspective: 1100px;
-  transform: rotateX(var(--tilt-x)) rotateY(var(--tilt-y));
+  transform: translateX(var(--stage-shift-x)) rotateX(var(--tilt-x)) rotateY(var(--tilt-y));
   transform-style: preserve-3d;
   transition: transform 240ms ease-out;
 }
@@ -195,6 +217,9 @@ img { display: block; max-width: 100%; }
 .has-product-orrery .product-model-note { opacity: .68; }
 .has-product-orrery .stage-controls { opacity: .78; transition: opacity var(--duration-fast) ease,border-color var(--duration-fast) ease; }
 .has-product-orrery .stage-controls:hover, .has-product-orrery:has(.universe-render:focus-visible) .stage-controls { opacity: 1; }
+.hero .orbit-readout { top: 13%; left: 49%; width: min(12rem,20vw); }
+.hero .product-model-note { top: 13%; right: 4%; }
+.hero .stage-controls { right: 4%; bottom: 6%; }
 .has-product-orrery .object-jurisfield .object-logo { width: 46%; height: 46%; }
 .has-product-orrery .object-atlas .object-logo { width: 60%; height: 48%; }
 .has-product-orrery .object-nammatn .object-logo { width: 48%; height: 48%; }
@@ -481,8 +506,8 @@ img { display: block; max-width: 100%; }
 .toast.is-visible { opacity: 1; transform: none; }
 .reveal { opacity: 0; transform: translateY(1.2rem); transition: opacity var(--duration-reveal) ease, transform var(--duration-reveal) var(--ease-orbit); }
 .reveal.is-visible { opacity: 1; transform: none; }
-.gravity-stage.reveal { transform: translateY(1.2rem) rotateX(var(--tilt-x)) rotateY(var(--tilt-y)); }
-.gravity-stage.reveal.is-visible { transform: rotateX(var(--tilt-x)) rotateY(var(--tilt-y)); }
+.gravity-stage.reveal { transform: translateX(var(--stage-shift-x)) translateY(1.2rem) rotateX(var(--tilt-x)) rotateY(var(--tilt-y)); }
+.gravity-stage.reveal.is-visible { transform: translateX(var(--stage-shift-x)) rotateX(var(--tilt-x)) rotateY(var(--tilt-y)); }
 
 [data-motion="paused"] *, [data-motion="paused"] *::before, [data-motion="paused"] *::after { animation-play-state: paused !important; }
 
@@ -494,7 +519,6 @@ img { display: block; max-width: 100%; }
 @media (max-width: 1180px) {
   .hero { grid-template-columns: minmax(0, 0.86fr) minmax(31rem, 1.14fr); }
   .hero h1 { font-size: clamp(3.3rem, 5.7vw, 5.4rem); }
-  .gravity-stage { width: min(100%, 37rem); }
   .mission-explorer { grid-template-columns: minmax(15rem,.5fr) minmax(0,1.5fr); }
 }
 
@@ -511,10 +535,8 @@ img { display: block; max-width: 100%; }
   .identity-copy small { font-size: .45rem; }
   .hero-actions { gap: .85rem; }
   .primary-action { min-width: 11.4rem; }
-  .gravity-stage { justify-self: end; width: min(100%,31rem); margin-top: 0; }
-  .orbit-readout { top: 2%; left: 1%; width: min(10rem,41%); }
+  .orbit-readout { width: min(10rem,41%); }
   .orbit-readout > p:not(.orbit-readout-status) { display: none; }
-  .product-model-note { top: 2%; right: 1%; }
   .section-heading { grid-template-columns: minmax(13rem,.45fr) minmax(0,1.55fr); }
   .section-heading-copy { align-items: flex-start; flex-direction: column; gap: 1rem; }
   .mission-explorer { grid-template-columns: minmax(14rem,.52fr) minmax(0,1.48fr); }
@@ -530,8 +552,12 @@ img { display: block; max-width: 100%; }
   .mobile-nav[hidden] { display: none; }
   .mobile-nav a { padding: .9rem 0; color: var(--moonlight); border-bottom: 1px solid var(--orbit-line); font: 620 .6rem var(--font-orbit); text-transform: uppercase; }
   .hero { grid-template-columns: 1fr; min-height: auto; padding-top: calc(var(--header-height) + 3.2rem); gap: 1.35rem; }
+  .hero::before { display: none; }
   .hero-copy { max-width: 46rem; }
-  .gravity-stage { justify-self: center; width: min(100%,36rem); margin-top: .25rem; }
+  .gravity-stage { --stage-shift-x: 0%; position: relative; inset: auto; left: auto; z-index: 0; justify-self: center; width: min(100%,36rem); height: auto; min-height: 0; margin-top: .25rem; aspect-ratio: 1.05; }
+  .hero .orbit-readout { top: 2%; left: 1%; width: min(10rem,41%); }
+  .hero .product-model-note { top: 2%; right: 1%; }
+  .hero .stage-controls { right: 3%; bottom: 5%; }
   .section-heading { grid-template-columns: 1fr; gap: 1.3rem; }
   .section-heading > .section-label { padding-top: 0; }
   .section-heading-copy { align-items: flex-start; flex-direction: row; }
@@ -586,19 +612,19 @@ img { display: block; max-width: 100%; }
   .gravity-core { width: 6.75rem; height: 6.75rem; }
   .gravity-core::before { inset: -.82rem; }
   .gravity-core::after { inset: -2.7rem; }
-  .orbit-readout { top: 1%; left: 1%; width: 8.7rem; padding: .52rem .58rem; }
+  .hero .orbit-readout { top: 1%; left: 1%; width: 8.7rem; padding: .52rem .58rem; }
   .orbit-readout-project { margin-top: .48rem; gap: .45rem; }
   .orbit-readout-project > img { width: 1.5rem; height: 1.5rem; }
   .orbit-readout-project b { font-size: .58rem; }
   .orbit-readout-project small { font-size: .33rem; }
   .orbit-readout > p:not(.orbit-readout-status), .orbit-readout-hint { display: none; }
-  .product-model-note { top: 1%; max-width: 8.5rem; }
+  .hero .product-model-note { top: 1%; max-width: 8.5rem; }
   .product-model-note small { display: none; }
   .object-jurisfield { --planet-size: 3rem; }
   .object-atlas { --planet-size: 3.35rem; }
   .object-nammatn { --planet-size: 3.1rem; }
   .object-mapsmith { --planet-size: 2.8rem; }
-  .stage-controls { right: 50%; bottom: 2%; max-width: calc(100% - 1rem); transform: translateX(50%) translateZ(1rem); }
+  .hero .stage-controls { right: 50%; bottom: 2%; max-width: calc(100% - 1rem); transform: translateX(50%) translateZ(1rem); }
   .stage-control, .stage-reset { min-height: 1.5rem; padding: 0 .46rem; font-size: .34rem; }
   .stage-control-zoom { display: none; }
   .work-section, .contact-section { padding-right: 1.25rem; padding-left: 1.25rem; }
