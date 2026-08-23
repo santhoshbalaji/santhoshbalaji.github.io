@@ -145,6 +145,7 @@ async function initialiseUniverse() {
   stage.dataset.threeOcclusion = "depth-buffered-logos";
   stage.dataset.threeOrbitBounds = "planet-safe";
   stage.dataset.threeAdaptiveFit = "rotation-safe";
+  stage.dataset.threeOrbitVisibility = "persistent-traces";
   stage.dataset.threeLighting = "single-sun-physical";
   stage.dataset.threeSurfaces = "terrain-roughness-atmosphere";
   stage.dataset.threeInteraction = "360-product-orbits";
@@ -480,13 +481,16 @@ function createProductUniverse(textureLoader, maxAnisotropy, productDefinitions,
       THREE.MathUtils.degToRad(spec.tiltY),
       THREE.MathUtils.degToRad(spec.tiltZ),
     );
-    const orbitLine = createOrbitLine(definition.color, 0.13);
+    const orbitTrace = createOrbitLine(definition.color, 0.025, false);
+    orbitTrace.renderOrder = 0;
+    orbitPlane.add(orbitTrace);
+    const orbitLine = createOrbitLine(definition.color, 0.1);
     orbitLine.renderOrder = 1;
     orbitPlane.add(orbitLine);
     const product = createProductWorld(definition, textureLoader, maxAnisotropy, sunDirection);
     orbitPlane.add(product.group);
     group.add(orbitPlane);
-    return { ...definition, ...product, ...spec, orbitPlane, orbitLine, orbitRadiusX: 1, orbitRadiusY: 1 };
+    return { ...definition, ...product, ...spec, orbitPlane, orbitTrace, orbitLine, orbitRadiusX: 1, orbitRadiusY: 1 };
   });
 
   const depthRandom = seededRandom(20260824);
@@ -533,6 +537,7 @@ function createProductUniverse(textureLoader, maxAnisotropy, productDefinitions,
     products.forEach((product) => {
       product.orbitRadiusX = orbitExtentX * product.radius;
       product.orbitRadiusY = orbitExtentY * product.radius * product.ellipse;
+      product.orbitTrace.scale.set(product.orbitRadiusX, product.orbitRadiusY, 1);
       product.orbitLine.scale.set(product.orbitRadiusX, product.orbitRadiusY, 1);
     });
     depthField.scale.set(width * 0.94, height * 0.88, 220);
@@ -549,7 +554,8 @@ function createProductUniverse(textureLoader, maxAnisotropy, productDefinitions,
         0,
       );
       const selected = product.key === activeProject;
-      product.orbitLine.material.opacity += ((selected ? 0.28 : 0.05) - product.orbitLine.material.opacity) * 0.08;
+      product.orbitLine.material.opacity += ((selected ? 0.15 : 0.11) - product.orbitLine.material.opacity) * 0.08;
+      product.orbitTrace.material.opacity += ((selected ? 0.035 : 0.025) - product.orbitTrace.material.opacity) * 0.08;
     });
     earthGlow.material.opacity = 0.052 + Math.sin(elapsed * 0.36) * 0.008;
     if (motionEnabled) depthField.rotation.z -= delta * 0.0012;
@@ -558,7 +564,7 @@ function createProductUniverse(textureLoader, maxAnisotropy, productDefinitions,
   return { group, earth, products, occluders: [earth.mesh], resize, update };
 }
 
-function createOrbitLine(color, opacity) {
+function createOrbitLine(color, opacity, depthTest = true) {
   const points = [];
   for (let index = 0; index < 320; index += 1) {
     const angle = index / 320 * Math.PI * 2;
@@ -566,7 +572,7 @@ function createOrbitLine(color, opacity) {
   }
   return new THREE.LineLoop(
     new THREE.BufferGeometry().setFromPoints(points),
-    new THREE.LineBasicMaterial({ color, transparent: true, opacity, depthWrite: false }),
+    new THREE.LineBasicMaterial({ color, transparent: true, opacity, depthTest, depthWrite: false }),
   );
 }
 
