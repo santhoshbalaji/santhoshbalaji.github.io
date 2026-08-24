@@ -101,11 +101,12 @@ const universeCanvas = document.querySelector("#universe-render");
 const universeActivate = document.querySelector("#universe-activate");
 let threeUniversePromise = null;
 
-function restoreUniversePreview(error) {
+function restoreUniversePreview(error, reason = "render-failure") {
   window.clearTimeout(window.__portfolioUniverseBootTimer);
   if (!gravityStage || gravityStage.dataset.threeState === "ready") return;
   gravityStage.classList.remove("has-three-universe", "has-product-orrery");
   gravityStage.dataset.threeState = "fallback";
+  gravityStage.dataset.threeFallback = reason;
   if (universeCanvas) universeCanvas.hidden = true;
   if (universeActivate) {
     universeActivate.disabled = false;
@@ -121,23 +122,75 @@ function activateThreeUniverse(reason = "control") {
 
   gravityStage.dataset.threeState = "booting";
   gravityStage.dataset.threeActivation = reason;
+  delete gravityStage.dataset.threeFallback;
   if (universeActivate) {
     universeActivate.disabled = true;
     universeActivate.setAttribute("aria-busy", "true");
   }
-  window.__portfolioUniverseBootTimer = window.setTimeout(() => restoreUniversePreview(), 8000);
+  window.__portfolioUniverseBootTimer = window.setTimeout(() => restoreUniversePreview(undefined, "startup-timeout"), 8000);
   threeUniversePromise = import("./three-universe.js?v=37").catch((error) => {
     threeUniversePromise = null;
-    restoreUniversePreview(error);
+    restoreUniversePreview(error, "module-load-failure");
   });
   return threeUniversePromise;
 }
 
-universeActivate?.addEventListener("click", () => activateThreeUniverse("explicit-control"));
+function supportsInteractiveWebGL() {
+  try {
+    const capabilityCanvas = document.createElement("canvas");
+    const capabilityContext = (
+      window.WebGLRenderingContext
+      && (capabilityCanvas.getContext("webgl2") || capabilityCanvas.getContext("webgl"))
+    );
+    if (!capabilityContext) return false;
+    capabilityContext.getExtension("WEBGL_lose_context")?.loseContext();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function automaticUniverseFallbackReason() {
+  if (prefersReducedMotion.matches) return "reduced-motion";
+  const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  if (connection?.saveData) return "data-saver";
+  if (!supportsInteractiveWebGL()) return "webgl-unavailable";
+  return "";
+}
+
+function startUniverseAfterFirstPaint() {
+  const fallbackReason = automaticUniverseFallbackReason();
+  if (fallbackReason) {
+    restoreUniversePreview(undefined, fallbackReason);
+    return;
+  }
+
+  const start = () => activateThreeUniverse("automatic-primary");
+  const startAfterPaint = () => window.requestAnimationFrame(() => window.requestAnimationFrame(start));
+  if (document.hidden) {
+    const startWhenVisible = () => {
+      if (document.hidden) return;
+      document.removeEventListener("visibilitychange", startWhenVisible);
+      startAfterPaint();
+    };
+    document.addEventListener("visibilitychange", startWhenVisible);
+    return;
+  }
+  startAfterPaint();
+}
+
+universeActivate?.addEventListener("click", () => activateThreeUniverse("fallback-override"));
 window.addEventListener("universe:ready", () => {
   window.clearTimeout(window.__portfolioUniverseBootTimer);
   universeActivate?.removeAttribute("aria-busy");
 });
+window.addEventListener("universe:fallback", () => {
+  threeUniversePromise = null;
+  if (!universeActivate) return;
+  universeActivate.disabled = false;
+  universeActivate.removeAttribute("aria-busy");
+});
+startUniverseAfterFirstPaint();
 const orbitPlanets = [...document.querySelectorAll("[data-orbit-planet]")];
 const orbitPaths = new Map(
   [...document.querySelectorAll("[data-orbit-path]")].map((path) => [path.dataset.orbitPath, path]),
