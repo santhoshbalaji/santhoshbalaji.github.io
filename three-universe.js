@@ -160,7 +160,9 @@ async function initialiseUniverse() {
   stage.dataset.threeVersion = THREE.REVISION;
   universe.rotation.set(defaultRotationX, defaultRotationY, 0);
   stage.dataset.threeDepth = "product-orbits";
-  stage.dataset.threeOcclusion = "depth-buffered-logos";
+  stage.dataset.threeOcclusion = "depth-buffered-bodies-whole-plate-logos";
+  stage.dataset.threeLogoOcclusion = "whole-plate-depth-gated";
+  stage.dataset.threeLogoTransition = "atomic-whole-plate";
   stage.dataset.threeOrbitBounds = "planet-safe";
   stage.dataset.threeAdaptiveFit = "rotation-safe";
   stage.dataset.threeOrbitVisibility = "persistent-traces";
@@ -267,8 +269,6 @@ async function initialiseUniverse() {
       product.satellitePivot.rotation.z += motionEnabled ? delta * (0.08 + product.radius * 0.01) : 0;
       const selected = product.key === (hoveredProject || activeProject);
       product.glow.material.opacity += ((selected ? 0.095 : 0.028) - product.glow.material.opacity) * 0.08;
-      product.logoSprite.material.opacity += ((selected ? 1 : 0.94) - product.logoSprite.material.opacity) * 0.08;
-      product.logoBackdrop.material.opacity += ((selected ? 0.96 : 0.78) - product.logoBackdrop.material.opacity) * 0.08;
       product.atmosphere.material.uniforms.strength.value += (
         (selected ? product.atmosphereStrength * 1.18 : product.atmosphereStrength)
         - product.atmosphere.material.uniforms.strength.value
@@ -296,11 +296,22 @@ async function initialiseUniverse() {
       const occluded = projected.z < -1
         || projected.z > 1
         || Boolean(bodyHit && bodyHit.distance < distanceToProduct);
+      if (occluded) {
+        product.logoSprite.visible = false;
+        product.logoBackdrop.visible = false;
+      } else {
+        const selected = product.key === (hoveredProject || activeProject);
+        product.logoSprite.visible = true;
+        product.logoBackdrop.visible = true;
+        product.logoSprite.material.opacity = selected ? 1 : 0.94;
+        product.logoBackdrop.material.opacity = selected ? 0.96 : 0.78;
+      }
       anchor.style.setProperty("--scene-x", `${(projected.x * sceneWidth * 0.5).toFixed(2)}px`);
       anchor.style.setProperty("--scene-y", `${(-projected.y * sceneHeight * 0.5).toFixed(2)}px`);
       anchor.style.setProperty("--scene-scale", perspectiveScale.toFixed(3));
       anchor.style.zIndex = String(Math.round(THREE.MathUtils.clamp(11 + worldPosition.z / 28, 6, 16)));
       anchor.dataset.depthState = occluded ? "behind-earth" : "visible";
+      anchor.dataset.logoDepthState = occluded ? "hidden-behind-earth" : "front-visible";
       anchor.classList.toggle("is-occluded", occluded);
     });
 
@@ -589,7 +600,16 @@ function createProductUniverse(textureLoader, maxAnisotropy, productDefinitions,
     const product = createProductWorld(definition, textureLoader, maxAnisotropy, sunDirection);
     orbitPlane.add(product.group);
     group.add(orbitPlane);
-    return { ...definition, ...product, ...spec, orbitPlane, orbitTrace, orbitLine, orbitRadiusX: 1, orbitRadiusY: 1 };
+    return {
+      ...definition,
+      ...product,
+      ...spec,
+      orbitPlane,
+      orbitTrace,
+      orbitLine,
+      orbitRadiusX: 1,
+      orbitRadiusY: 1,
+    };
   });
 
   const depthRandom = seededRandom(20260824);
@@ -800,7 +820,7 @@ function createProductWorld(definition, textureLoader, maxAnisotropy, sunDirecti
     transparent: true,
     opacity: 0.94,
     alphaTest: 0.035,
-    depthTest: true,
+    depthTest: false,
     depthWrite: false,
     blending: THREE.NormalBlending,
     toneMapped: false,
@@ -819,7 +839,7 @@ function createProductWorld(definition, textureLoader, maxAnisotropy, sunDirecti
     transparent: true,
     opacity: 0.78,
     alphaTest: 0.012,
-    depthTest: true,
+    depthTest: false,
     depthWrite: false,
     toneMapped: false,
   }));

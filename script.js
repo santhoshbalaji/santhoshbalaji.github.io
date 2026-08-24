@@ -126,7 +126,7 @@ function activateThreeUniverse(reason = "control") {
     universeActivate.setAttribute("aria-busy", "true");
   }
   window.__portfolioUniverseBootTimer = window.setTimeout(() => restoreUniversePreview(), 8000);
-  threeUniversePromise = import("./three-universe.js?v=35").catch((error) => {
+  threeUniversePromise = import("./three-universe.js?v=37").catch((error) => {
     threeUniversePromise = null;
     restoreUniversePreview(error);
   });
