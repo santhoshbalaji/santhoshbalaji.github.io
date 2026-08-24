@@ -25,7 +25,7 @@ async function initialiseUniverse() {
   });
   let rendererPixelRatio = 0;
   function syncPixelRatio() {
-    const nextPixelRatio = Math.min(window.devicePixelRatio || 1, window.innerWidth < 640 ? 1.5 : 2);
+    const nextPixelRatio = Math.min(window.devicePixelRatio || 1, window.innerWidth < 640 ? 1.35 : 1.75);
     if (nextPixelRatio === rendererPixelRatio) return;
     rendererPixelRatio = nextPixelRatio;
     renderer.setPixelRatio(rendererPixelRatio);
@@ -117,6 +117,7 @@ async function initialiseUniverse() {
   const anchors = new Map(
     [...stage.querySelectorAll("[data-orbit-planet]")].map((anchor) => [anchor.dataset.orbitPlanet, anchor]),
   );
+  const anchorScales = new Map();
   const resetButton = stage.querySelector("#universe-reset");
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
   let activeProject = stage.dataset.activeOrbit || "jurisfield";
@@ -125,7 +126,11 @@ async function initialiseUniverse() {
     && !reducedMotion.matches;
   let elapsed = 0;
   let lastFrame = performance.now();
+  let lastRenderedAt = 0;
   let animationFrame = 0;
+  let sceneWidth = 1;
+  let sceneHeight = 1;
+  let targetFrameInterval = 1000 / 30;
   let baseCameraDistance = 1200;
   let currentZoom = 1;
   let targetZoom = 1;
@@ -164,11 +169,16 @@ async function initialiseUniverse() {
   stage.dataset.threeInteraction = "360-product-orbits";
   stage.dataset.threeLogoTreatment = "camera-facing-product-plates";
   stage.dataset.threeLogoFit = "asset-specific-optical";
+  stage.dataset.threeRendering = "adaptive-demand-driven";
   stage.dataset.portfolioBodies = "earth-jurisfield-atlas-nammatn-mapsmith";
   function resize() {
     syncPixelRatio();
     const width = Math.max(1, stage.clientWidth);
     const height = Math.max(1, stage.clientHeight);
+    sceneWidth = width;
+    sceneHeight = height;
+    targetFrameInterval = 1000 / (width < 720 ? 24 : 30);
+    stage.dataset.threeFrameBudget = width < 720 ? "24fps" : "30fps";
     renderer.setSize(width, height, false);
     camera.aspect = width / height;
     baseCameraDistance = (height / 2) / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
@@ -176,6 +186,11 @@ async function initialiseUniverse() {
     camera.far = Math.max(4000, baseCameraDistance * 3);
     camera.updateProjectionMatrix();
     productUniverse.resize(width, height);
+    products.forEach((product) => {
+      const anchor = anchors.get(product.key);
+      if (!anchor) return;
+      anchorScales.set(product.key, (anchor.clientWidth / 2) / product.size);
+    });
     render(performance.now(), true);
   }
 
@@ -209,8 +224,15 @@ async function initialiseUniverse() {
 
   function render(timestamp = performance.now(), force = false) {
     window.cancelAnimationFrame(animationFrame);
+    animationFrame = 0;
+    const frameInterval = dragging ? 1000 / 45 : targetFrameInterval;
+    if (!force && lastRenderedAt && timestamp - lastRenderedAt < frameInterval) {
+      animationFrame = window.requestAnimationFrame(render);
+      return;
+    }
     const delta = Math.min(0.05, Math.max(0, (timestamp - lastFrame) / 1000));
     lastFrame = timestamp;
+    lastRenderedAt = timestamp;
     if (motionEnabled) elapsed += delta;
 
     if (!dragging) {
@@ -235,13 +257,12 @@ async function initialiseUniverse() {
 
     earth.mesh.rotation.y = THREE.MathUtils.degToRad(0.8) * Math.sin(elapsed * 0.16);
     earth.atmosphere.material.uniforms.viewVector.value.copy(camera.position);
-    const stageBounds = stage.getBoundingClientRect();
     productUniverse.update(elapsed, delta, hoveredProject || activeProject, motionEnabled);
 
     products.forEach((product) => {
       const anchor = anchors.get(product.key);
       if (!anchor) return;
-      product.group.scale.setScalar((anchor.offsetWidth / 2) / product.size);
+      product.group.scale.setScalar(anchorScales.get(product.key) || 1);
       product.surface.rotation.y += motionEnabled ? delta * (0.055 + product.radius * 0.012) : 0;
       product.satellitePivot.rotation.z += motionEnabled ? delta * (0.08 + product.radius * 0.01) : 0;
       const selected = product.key === (hoveredProject || activeProject);
@@ -275,8 +296,8 @@ async function initialiseUniverse() {
       const occluded = projected.z < -1
         || projected.z > 1
         || Boolean(bodyHit && bodyHit.distance < distanceToProduct);
-      anchor.style.setProperty("--scene-x", `${(projected.x * stageBounds.width * 0.5).toFixed(2)}px`);
-      anchor.style.setProperty("--scene-y", `${(-projected.y * stageBounds.height * 0.5).toFixed(2)}px`);
+      anchor.style.setProperty("--scene-x", `${(projected.x * sceneWidth * 0.5).toFixed(2)}px`);
+      anchor.style.setProperty("--scene-y", `${(-projected.y * sceneHeight * 0.5).toFixed(2)}px`);
       anchor.style.setProperty("--scene-scale", perspectiveScale.toFixed(3));
       anchor.style.zIndex = String(Math.round(THREE.MathUtils.clamp(11 + worldPosition.z / 28, 6, 16)));
       anchor.dataset.depthState = occluded ? "behind-earth" : "visible";
@@ -524,6 +545,7 @@ async function initialiseUniverse() {
   stage.classList.add("has-three-universe", "has-product-orrery");
   stage.dataset.threeInitMs = String(Math.round(performance.now() - initialisationStarted));
   stage.dataset.threeState = "ready";
+  window.dispatchEvent(new CustomEvent("universe:ready"));
   scheduleDiscovery();
 }
 

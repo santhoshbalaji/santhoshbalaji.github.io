@@ -97,40 +97,47 @@ careerTabs.forEach((tab, index) => {
 const canvas = document.querySelector("#starfield");
 const context = canvas.getContext("2d", { alpha: true });
 const gravityStage = document.querySelector("#gravity-stage");
-if (gravityStage?.dataset.threeState === "booting") {
-  window.__portfolioUniverseBootTimer = window.setTimeout(() => {
-    if (gravityStage.dataset.threeState !== "booting") return;
-    gravityStage.dataset.threeState = "fallback";
-    const universeCanvas = document.querySelector("#universe-render");
-    if (universeCanvas) universeCanvas.hidden = true;
-    renderCloudlessEarth();
-  }, 8000);
+const universeCanvas = document.querySelector("#universe-render");
+const universeActivate = document.querySelector("#universe-activate");
+let threeUniversePromise = null;
+
+function restoreUniversePreview(error) {
+  window.clearTimeout(window.__portfolioUniverseBootTimer);
+  if (!gravityStage || gravityStage.dataset.threeState === "ready") return;
+  gravityStage.classList.remove("has-three-universe", "has-product-orrery");
+  gravityStage.dataset.threeState = "fallback";
+  if (universeCanvas) universeCanvas.hidden = true;
+  if (universeActivate) {
+    universeActivate.disabled = false;
+    universeActivate.removeAttribute("aria-busy");
+  }
+  window.dispatchEvent(new CustomEvent("universe:fallback"));
+  if (error) console.warn("3D universe unavailable; retaining the lightweight product preview.", error);
 }
 
-function loadThreeUniverse() {
-  import("./three-universe.js?v=34").catch((error) => {
-    if (gravityStage?.dataset.threeState !== "booting") return;
-    window.clearTimeout(window.__portfolioUniverseBootTimer);
-    gravityStage.dataset.threeState = "fallback";
-    const universeCanvas = document.querySelector("#universe-render");
-    if (universeCanvas) universeCanvas.hidden = true;
-    window.dispatchEvent(new CustomEvent("universe:fallback"));
-    console.warn("3D universe module unavailable; using the accessible CSS fallback.", error);
+function activateThreeUniverse(reason = "control") {
+  if (!gravityStage || gravityStage.dataset.threeState === "ready") return threeUniversePromise;
+  if (threeUniversePromise) return threeUniversePromise;
+
+  gravityStage.dataset.threeState = "booting";
+  gravityStage.dataset.threeActivation = reason;
+  if (universeActivate) {
+    universeActivate.disabled = true;
+    universeActivate.setAttribute("aria-busy", "true");
+  }
+  window.__portfolioUniverseBootTimer = window.setTimeout(() => restoreUniversePreview(), 8000);
+  threeUniversePromise = import("./three-universe.js?v=35").catch((error) => {
+    threeUniversePromise = null;
+    restoreUniversePreview(error);
   });
+  return threeUniversePromise;
 }
 
-function scheduleThreeUniverse() {
-  const start = () => {
-    if ("requestIdleCallback" in window) {
-      window.requestIdleCallback(loadThreeUniverse, { timeout: 900 });
-    } else {
-      window.setTimeout(loadThreeUniverse, 80);
-    }
-  };
-  window.requestAnimationFrame(() => window.requestAnimationFrame(start));
-}
-
-scheduleThreeUniverse();
+universeActivate?.addEventListener("click", () => activateThreeUniverse("explicit-control"));
+window.addEventListener("universe:ready", () => {
+  window.clearTimeout(window.__portfolioUniverseBootTimer);
+  universeActivate?.removeAttribute("aria-busy");
+});
 const orbitPlanets = [...document.querySelectorAll("[data-orbit-planet]")];
 const orbitPaths = new Map(
   [...document.querySelectorAll("[data-orbit-path]")].map((path) => [path.dataset.orbitPath, path]),
@@ -146,112 +153,17 @@ const orbitReadoutLogo = document.querySelector("#orbit-readout-logo");
 const orbitReadoutName = document.querySelector("#orbit-readout-name");
 const orbitReadoutClass = document.querySelector("#orbit-readout-class");
 const orbitReadoutNote = document.querySelector("#orbit-readout-note");
-const earthCanvas = document.querySelector("#earth-render");
 const activeOrbitOrder = ["jurisfield", "atlas", "nammatn", "mapsmith"];
 const activeOrbitCycleMs = 3200;
+const initialActiveOrbitDelayMs = 6400;
 const pointer = { x: 0, y: 0, targetX: 0, targetY: 0 };
 let stars = [];
 let starFrame;
+let starfieldReady = false;
 let activeOrbitTimer;
 let activeOrbitInteractionLocked = false;
 let scrollDepth = 0;
 let orbitalElapsed = 0;
-let lastFrameTime = performance.now();
-let fallbackEarthRenderingStarted = false;
-
-function renderCloudlessEarth() {
-  if (!earthCanvas || fallbackEarthRenderingStarted) return;
-  fallbackEarthRenderingStarted = true;
-  const earthContext = earthCanvas.getContext("2d", { alpha: true });
-  if (!earthContext) return;
-
-  const texture = new Image();
-  texture.decoding = "async";
-  texture.addEventListener("load", () => {
-    const source = document.createElement("canvas");
-    source.width = texture.naturalWidth;
-    source.height = texture.naturalHeight;
-    const sourceContext = source.getContext("2d", { willReadFrequently: true });
-    if (!sourceContext) return;
-    sourceContext.drawImage(texture, 0, 0);
-
-    const sourcePixels = sourceContext.getImageData(0, 0, source.width, source.height).data;
-    const output = earthContext.createImageData(earthCanvas.width, earthCanvas.height);
-    const outputPixels = output.data;
-    const radius = earthCanvas.width * 0.494;
-    const centre = earthCanvas.width / 2;
-    const earthFocus = { latitude: 20.6, longitude: 78.9 };
-    const centreLatitude = earthFocus.latitude * Math.PI / 180;
-    const centreLongitude = earthFocus.longitude * Math.PI / 180;
-    const sinLatitude = Math.sin(centreLatitude);
-    const cosLatitude = Math.cos(centreLatitude);
-    const sinLongitude = Math.sin(centreLongitude);
-    const cosLongitude = Math.cos(centreLongitude);
-    const centreVector = [cosLatitude * cosLongitude, cosLatitude * sinLongitude, sinLatitude];
-    const eastVector = [-sinLongitude, cosLongitude, 0];
-    const northVector = [-sinLatitude * cosLongitude, -sinLatitude * sinLongitude, cosLatitude];
-
-    const sample = (x, y, channel) => sourcePixels[(y * source.width + x) * 4 + channel];
-    const lightVector = [-0.36, 0.3, 0.884];
-    const halfVector = [-0.187, 0.156, 0.97];
-    const atmosphereColor = [0.018, 0.055, 0.14];
-
-    for (let y = 0; y < earthCanvas.height; y += 1) {
-      const north = -(y + 0.5 - centre) / radius;
-      for (let x = 0; x < earthCanvas.width; x += 1) {
-        const east = (x + 0.5 - centre) / radius;
-        const distanceSquared = east * east + north * north;
-        if (distanceSquared > 1) continue;
-
-        const forward = Math.sqrt(1 - distanceSquared);
-        const sphereX = forward * centreVector[0] + east * eastVector[0] + north * northVector[0];
-        const sphereY = forward * centreVector[1] + east * eastVector[1] + north * northVector[1];
-        const sphereZ = forward * centreVector[2] + east * eastVector[2] + north * northVector[2];
-        const latitude = Math.asin(Math.max(-1, Math.min(1, sphereZ)));
-        const longitude = Math.atan2(sphereY, sphereX);
-        const sourceX = ((longitude + Math.PI) / (2 * Math.PI)) * source.width;
-        const sourceY = ((Math.PI / 2 - latitude) / Math.PI) * source.height;
-        const x0 = Math.floor(sourceX) % source.width;
-        const x1 = (x0 + 1) % source.width;
-        const y0 = Math.max(0, Math.min(source.height - 1, Math.floor(sourceY)));
-        const y1 = Math.min(source.height - 1, y0 + 1);
-        const mixX = sourceX - Math.floor(sourceX);
-        const mixY = sourceY - Math.floor(sourceY);
-        const outputIndex = (y * earthCanvas.width + x) * 4;
-        const sampledColor = [0, 0, 0];
-        for (let channel = 0; channel < 3; channel += 1) {
-          const top = sample(x0, y0, channel) * (1 - mixX) + sample(x1, y0, channel) * mixX;
-          const bottom = sample(x0, y1, channel) * (1 - mixX) + sample(x1, y1, channel) * mixX;
-          sampledColor[channel] = (top * (1 - mixY) + bottom * mixY) / 255;
-        }
-
-        const diffuse = Math.max(0, east * lightVector[0] + north * lightVector[1] + forward * lightVector[2]);
-        const limbDarkening = 0.76 + forward * 0.24;
-        const surfaceLight = (0.37 + diffuse * 0.78) * limbDarkening;
-        const fresnel = Math.pow(1 - forward, 3.2);
-        const atmosphere = fresnel * (0.22 + diffuse * 0.78);
-        const isOcean = sampledColor[2] > sampledColor[0] * 1.4 && sampledColor[2] > sampledColor[1] * 1.22;
-        const specularAngle = Math.max(0, east * halfVector[0] + north * halfVector[1] + forward * halfVector[2]);
-        const specular = isOcean ? Math.pow(specularAngle, 44) * 0.18 : 0;
-
-        for (let channel = 0; channel < 3; channel += 1) {
-          const linearSurface = Math.pow(sampledColor[channel], 2.2) * surfaceLight;
-          const linearColor = linearSurface + atmosphereColor[channel] * atmosphere + specular;
-          outputPixels[outputIndex + channel] = Math.min(255, Math.pow(linearColor, 1 / 2.2) * 255);
-        }
-
-        const edgeFeather = Math.min(1, (1 - Math.sqrt(distanceSquared)) * 110);
-        outputPixels[outputIndex + 3] = 255 * edgeFeather;
-      }
-    }
-
-    earthContext.putImageData(output, 0, 0);
-  });
-  texture.src = earthCanvas.dataset.texture;
-}
-
-if (gravityStage?.dataset.threeState === "fallback") renderCloudlessEarth();
-window.addEventListener("universe:fallback", renderCloudlessEarth, { once: true });
 
 function setActiveOrbit(project) {
   const data = projectData[project];
@@ -269,7 +181,7 @@ function stopActiveOrbitCycle() {
   window.clearTimeout(activeOrbitTimer);
 }
 
-function scheduleActiveOrbitCycle() {
+function scheduleActiveOrbitCycle(delay = activeOrbitCycleMs) {
   stopActiveOrbitCycle();
   if (!motionRunning || prefersReducedMotion.matches || document.hidden) return;
 
@@ -280,7 +192,7 @@ function scheduleActiveOrbitCycle() {
       setActiveOrbit(activeOrbitOrder[nextIndex]);
     }
     scheduleActiveOrbitCycle();
-  }, activeOrbitCycleMs);
+  }, delay);
 }
 
 orbitPlanets.forEach((planet) => {
@@ -309,18 +221,18 @@ window.addEventListener("universe:release", () => {
   scheduleActiveOrbitCycle();
 });
 setActiveOrbit("jurisfield");
-scheduleActiveOrbitCycle();
+scheduleActiveOrbitCycle(initialActiveOrbitDelayMs);
 
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) stopActiveOrbitCycle();
   else scheduleActiveOrbitCycle();
 });
 
-function createStars() {
-  const density = Math.max(110, Math.min(260, Math.floor(window.innerWidth / 5.5)));
+function createStars(viewportWidth, viewportHeight) {
+  const density = Math.max(72, Math.min(170, Math.floor(viewportWidth / 8)));
   stars = Array.from({ length: density }, () => ({
-    x: Math.random() * window.innerWidth,
-    y: Math.random() * window.innerHeight,
+    x: Math.random() * viewportWidth,
+    y: Math.random() * viewportHeight,
     z: 0.18 + Math.random() * 0.82,
     size: 0.35 + Math.random() * 1.15,
     alpha: 0.22 + Math.random() * 0.68,
@@ -333,21 +245,26 @@ function createStars() {
 }
 
 function sizeStarfield() {
-  const ratio = Math.min(window.devicePixelRatio || 1, 2);
-  canvas.width = Math.round(window.innerWidth * ratio);
-  canvas.height = Math.round(window.innerHeight * ratio);
-  canvas.style.width = `${window.innerWidth}px`;
-  canvas.style.height = `${window.innerHeight}px`;
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+  const ratio = Math.min(window.devicePixelRatio || 1, 1.5);
+  canvas.width = Math.round(viewportWidth * ratio);
+  canvas.height = Math.round(viewportHeight * ratio);
   context.setTransform(ratio, 0, 0, ratio, 0, 0);
-  createStars();
-  if (gravityStage?.dataset.threeState === "fallback") updateProductOrbits();
+  createStars(viewportWidth, viewportHeight);
   drawStarfield();
+}
+
+function ensureStarfield() {
+  if (starfieldReady) return;
+  starfieldReady = true;
+  sizeStarfield();
 }
 
 function drawStarfield(timestamp = performance.now()) {
   context.clearRect(0, 0, window.innerWidth, window.innerHeight);
-  pointer.x += (pointer.targetX - pointer.x) * 0.035;
-  pointer.y += (pointer.targetY - pointer.y) * 0.035;
+  pointer.x = pointer.targetX;
+  pointer.y = pointer.targetY;
 
   stars.forEach((star) => {
     const depthX = pointer.x * star.z * 18;
@@ -379,12 +296,12 @@ function drawStarfield(timestamp = performance.now()) {
   });
 }
 
-function updateProductOrbits(elapsed = orbitalElapsed) {
-  if (!gravityStage) return;
-  const bounds = gravityStage.getBoundingClientRect();
-  if (!bounds.width || !bounds.height) return;
+const orbitStageSize = { width: 0, height: 0 };
 
-  const compactX = bounds.width < 500 ? 0.9 : 1;
+function updateProductOrbits(elapsed = orbitalElapsed) {
+  if (!gravityStage || !orbitStageSize.width || !orbitStageSize.height) return;
+
+  const compactX = orbitStageSize.width < 500 ? 0.9 : 1;
   const compactY = 1;
 
   orbitPlanets.forEach((planet) => {
@@ -392,8 +309,8 @@ function updateProductOrbits(elapsed = orbitalElapsed) {
     const configuration = orbitConfiguration[orbitName];
     if (!configuration) return;
 
-    const radiusX = bounds.width * configuration.radiusX * compactX;
-    const radiusY = bounds.height * configuration.radiusY * compactY;
+    const radiusX = orbitStageSize.width * configuration.radiusX * compactX;
+    const radiusY = orbitStageSize.height * configuration.radiusY * compactY;
     const rotation = configuration.rotation * Math.PI / 180;
     const angle = configuration.phase + elapsed / configuration.duration * Math.PI * 2;
     const ellipseX = Math.cos(angle) * radiusX;
@@ -417,32 +334,37 @@ function updateProductOrbits(elapsed = orbitalElapsed) {
   });
 }
 
-function animateStarfield(timestamp) {
-  const frameTime = Number.isFinite(timestamp) ? timestamp : performance.now();
-  const frameDelta = Math.min(64, Math.max(0, frameTime - lastFrameTime));
-  lastFrameTime = frameTime;
-  orbitalElapsed += frameDelta;
-  if (gravityStage?.dataset.threeState === "fallback") updateProductOrbits();
-  drawStarfield(frameTime);
-  if (motionRunning) starFrame = window.requestAnimationFrame(animateStarfield);
-}
-
-function startStarfield() {
-  window.cancelAnimationFrame(starFrame);
-  lastFrameTime = performance.now();
-  if (gravityStage?.dataset.threeState === "fallback") updateProductOrbits();
-  drawStarfield();
-  if (motionRunning) starFrame = window.requestAnimationFrame(animateStarfield);
+function scheduleStarfieldDraw() {
+  if (!starfieldReady) return;
+  if (starFrame) return;
+  starFrame = window.requestAnimationFrame((timestamp) => {
+    starFrame = 0;
+    drawStarfield(timestamp);
+  });
 }
 
 window.addEventListener("pointermove", (event) => {
   pointer.targetX = event.clientX / window.innerWidth - 0.5;
   pointer.targetY = event.clientY / window.innerHeight - 0.5;
+  if (motionRunning) {
+    ensureStarfield();
+    scheduleStarfieldDraw();
+  }
 }, { passive: true });
 
-window.addEventListener("resize", sizeStarfield, { passive: true });
-sizeStarfield();
-startStarfield();
+window.addEventListener("resize", () => {
+  if (starfieldReady) sizeStarfield();
+}, { passive: true });
+
+if (gravityStage && "ResizeObserver" in window) {
+  const orbitResizeObserver = new ResizeObserver(([entry]) => {
+    orbitStageSize.width = entry.contentRect.width;
+    orbitStageSize.height = entry.contentRect.height;
+    updateProductOrbits();
+  });
+  orbitResizeObserver.observe(gravityStage);
+}
+window.addEventListener("universe:fallback", () => updateProductOrbits());
 
 gravityStage.addEventListener("pointermove", (event) => {
   if (!motionRunning || gravityStage.classList.contains("has-three-universe")) return;
@@ -463,7 +385,7 @@ function setMotion(running) {
   root.dataset.motion = motionRunning ? "running" : "paused";
   motionControl.setAttribute("aria-pressed", String(!motionRunning));
   motionControl.querySelector(".motion-label").textContent = motionRunning ? "Pause motion" : "Resume motion";
-  startStarfield();
+  scheduleStarfieldDraw();
   if (motionRunning) scheduleActiveOrbitCycle();
   else stopActiveOrbitCycle();
   window.dispatchEvent(new CustomEvent("motion:change", { detail: { running: motionRunning } }));
@@ -483,9 +405,18 @@ function updateFlightPosition() {
   flightMarker.style.top = `${progress * 100}%`;
   header.classList.toggle("is-scrolled", window.scrollY > 32);
   scrollDepth = window.scrollY;
+  scheduleStarfieldDraw();
 }
-window.addEventListener("scroll", updateFlightPosition, { passive: true });
-updateFlightPosition();
+let flightFrame = 0;
+function scheduleFlightPosition() {
+  if (flightFrame) return;
+  flightFrame = window.requestAnimationFrame(() => {
+    flightFrame = 0;
+    updateFlightPosition();
+  });
+}
+window.addEventListener("scroll", scheduleFlightPosition, { passive: true });
+scheduleFlightPosition();
 
 if ("IntersectionObserver" in window) {
   const sectionObserver = new IntersectionObserver((entries) => {
