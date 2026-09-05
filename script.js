@@ -13,7 +13,7 @@ const missionTabs = [...document.querySelectorAll(".mission-tab")];
 const missionPanels = [...document.querySelectorAll(".mission-panel")];
 const missionExplorer = document.querySelector("#mission-explorer");
 
-function selectProject(project, { focus = false } = {}) {
+function selectProject(project, { focus = false, updateUrl = true } = {}) {
   const selectedTab = missionTabs.find((tab) => tab.dataset.project === project);
   const selectedPanel = missionPanels.find((panel) => panel.dataset.panel === project);
   if (!selectedTab || !selectedPanel || !projectData[project]) return;
@@ -32,8 +32,16 @@ function selectProject(project, { focus = false } = {}) {
   });
 
   missionExplorer.dataset.activeProject = project;
+  if (updateUrl) history.replaceState(null, "", `#${project}`);
   if (focus) selectedTab.focus();
 }
+
+function selectLinkedProject() {
+  const project = location.hash.slice(1);
+  if (projectData[project]) selectProject(project, { updateUrl: false });
+}
+selectLinkedProject();
+window.addEventListener("hashchange", selectLinkedProject);
 
 missionTabs.forEach((tab, index) => {
   tab.addEventListener("click", () => selectProject(tab.dataset.project));
@@ -50,7 +58,12 @@ missionTabs.forEach((tab, index) => {
 });
 
 document.querySelectorAll("[data-select-project]").forEach((link) => {
-  link.addEventListener("click", () => selectProject(link.dataset.selectProject));
+  link.addEventListener("click", (event) => {
+    event.preventDefault();
+    selectProject(link.dataset.selectProject);
+    missionExplorer.scrollIntoView({ behavior: prefersReducedMotion.matches ? "instant" : "smooth", block: "start" });
+    missionTabs.find((tab) => tab.dataset.project === link.dataset.selectProject)?.focus({ preventScroll: true });
+  });
 });
 
 const careerTabs = [...document.querySelectorAll(".career-node")];
@@ -107,6 +120,8 @@ function restoreUniversePreview(error, reason = "render-failure") {
   gravityStage.classList.remove("has-three-universe", "has-product-orrery");
   gravityStage.dataset.threeState = "fallback";
   gravityStage.dataset.threeFallback = reason;
+  gravityStage.setAttribute("aria-label", "Product map. Select a product to read about it. Interactive 3D is available on request.");
+  gravityStage.setAttribute("aria-busy", "false");
   if (universeCanvas) universeCanvas.hidden = true;
   if (universeActivate) {
     universeActivate.disabled = false;
@@ -122,32 +137,28 @@ function activateThreeUniverse(reason = "control") {
 
   gravityStage.dataset.threeState = "booting";
   gravityStage.dataset.threeActivation = reason;
+  gravityStage.setAttribute("aria-busy", "true");
   delete gravityStage.dataset.threeFallback;
   if (universeActivate) {
     universeActivate.disabled = true;
     universeActivate.setAttribute("aria-busy", "true");
   }
-  window.__portfolioUniverseBootTimer = window.setTimeout(() => restoreUniversePreview(undefined, "startup-timeout"), 8000);
-  threeUniversePromise = import("./three-universe.js?v=37").catch((error) => {
+  const controller = new AbortController();
+  window.__portfolioUniverseBootTimer = window.setTimeout(() => {
+    controller.abort();
+    restoreUniversePreview(undefined, "startup-timeout");
+  }, 12000);
+  threeUniversePromise = import("./three-universe.js?v=38").then((module) => module.initialiseUniverse(controller.signal)).catch((error) => {
     threeUniversePromise = null;
-    restoreUniversePreview(error, "module-load-failure");
+    if (!controller.signal.aborted) restoreUniversePreview(error, "module-load-failure");
   });
   return threeUniversePromise;
 }
 
 function supportsInteractiveWebGL() {
-  try {
-    const capabilityCanvas = document.createElement("canvas");
-    const capabilityContext = (
-      window.WebGLRenderingContext
-      && (capabilityCanvas.getContext("webgl2") || capabilityCanvas.getContext("webgl"))
-    );
-    if (!capabilityContext) return false;
-    capabilityContext.getExtension("WEBGL_lose_context")?.loseContext();
-    return true;
-  } catch {
-    return false;
-  }
+  // Creating a throwaway GPU context before the real renderer doubles driver startup.
+  // Let the renderer report actual context failures through the normal fallback path.
+  return typeof window.WebGL2RenderingContext !== "undefined";
 }
 
 function automaticUniverseFallbackReason() {
@@ -183,6 +194,8 @@ universeActivate?.addEventListener("click", () => activateThreeUniverse("fallbac
 window.addEventListener("universe:ready", () => {
   window.clearTimeout(window.__portfolioUniverseBootTimer);
   universeActivate?.removeAttribute("aria-busy");
+  gravityStage.setAttribute("aria-busy", "false");
+  gravityStage.setAttribute("aria-label", "Interactive 3D product universe. Earth and four product planets. Drag to rotate or select a product to read about it.");
 });
 window.addEventListener("universe:fallback", () => {
   threeUniversePromise = null;
@@ -215,6 +228,7 @@ let starFrame;
 let starfieldReady = false;
 let activeOrbitTimer;
 let activeOrbitInteractionLocked = false;
+let orbitInView = true;
 let scrollDepth = 0;
 let orbitalElapsed = 0;
 
@@ -236,7 +250,7 @@ function stopActiveOrbitCycle() {
 
 function scheduleActiveOrbitCycle(delay = activeOrbitCycleMs) {
   stopActiveOrbitCycle();
-  if (!motionRunning || prefersReducedMotion.matches || document.hidden) return;
+  if (!motionRunning || prefersReducedMotion.matches || document.hidden || !orbitInView) return;
 
   activeOrbitTimer = window.setTimeout(() => {
     if (!activeOrbitInteractionLocked) {
@@ -275,6 +289,11 @@ window.addEventListener("universe:release", () => {
 });
 setActiveOrbit("jurisfield");
 scheduleActiveOrbitCycle(initialActiveOrbitDelayMs);
+new IntersectionObserver(([entry]) => {
+  orbitInView = entry.isIntersecting;
+  if (orbitInView) scheduleActiveOrbitCycle();
+  else stopActiveOrbitCycle();
+}).observe(gravityStage);
 
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) stopActiveOrbitCycle();
@@ -432,19 +451,24 @@ gravityStage.addEventListener("pointerleave", () => {
   gravityStage.style.setProperty("--tilt-y", "0deg");
 });
 
-const motionControl = document.querySelector("#motion-control");
+const motionControls = [...document.querySelectorAll("[data-motion-toggle]")];
 function setMotion(running) {
   motionRunning = running && !prefersReducedMotion.matches;
   root.dataset.motion = motionRunning ? "running" : "paused";
-  motionControl.setAttribute("aria-pressed", String(!motionRunning));
-  motionControl.querySelector(".motion-label").textContent = motionRunning ? "Pause motion" : "Resume motion";
+  motionControls.forEach((control) => {
+    control.setAttribute("aria-pressed", String(!motionRunning));
+    control.querySelector(".motion-label").textContent = motionRunning ? "Pause motion" : "Resume motion";
+    control.disabled = prefersReducedMotion.matches;
+    control.title = prefersReducedMotion.matches ? "Your system reduced-motion preference is enabled" : "";
+  });
   scheduleStarfieldDraw();
   if (motionRunning) scheduleActiveOrbitCycle();
   else stopActiveOrbitCycle();
   window.dispatchEvent(new CustomEvent("motion:change", { detail: { running: motionRunning } }));
 }
-motionControl.addEventListener("click", () => setMotion(!motionRunning));
+motionControls.forEach((control) => control.addEventListener("click", () => setMotion(!motionRunning)));
 prefersReducedMotion.addEventListener("change", () => setMotion(!prefersReducedMotion.matches));
+setMotion(motionRunning);
 
 const header = document.querySelector("#site-header");
 const navLinks = [...document.querySelectorAll(".site-nav a")];
@@ -476,7 +500,8 @@ if ("IntersectionObserver" in window) {
     entries.forEach((entry) => {
       if (!entry.isIntersecting) return;
       [...navLinks, ...flightLinks].forEach((link) => {
-        link.toggleAttribute("aria-current", link.getAttribute("href") === `#${entry.target.id}`);
+        if (link.getAttribute("href") === `#${entry.target.id}`) link.setAttribute("aria-current", "true");
+        else link.removeAttribute("aria-current");
       });
     });
   }, { rootMargin: "-38% 0px -52%", threshold: 0 });
@@ -499,6 +524,12 @@ if ("IntersectionObserver" in window) {
 
 const menuButton = document.querySelector("#menu-button");
 const mobileNav = document.querySelector("#mobile-nav");
+function closeMenu({ focus = false } = {}) {
+  menuButton.setAttribute("aria-expanded", "false");
+  menuButton.textContent = "Menu";
+  mobileNav.hidden = true;
+  if (focus) menuButton.focus();
+}
 menuButton.addEventListener("click", () => {
   const open = menuButton.getAttribute("aria-expanded") === "true";
   menuButton.setAttribute("aria-expanded", String(!open));
@@ -506,11 +537,16 @@ menuButton.addEventListener("click", () => {
   mobileNav.hidden = open;
 });
 mobileNav.querySelectorAll("a").forEach((link) => {
-  link.addEventListener("click", () => {
-    menuButton.setAttribute("aria-expanded", "false");
-    menuButton.textContent = "Menu";
-    mobileNav.hidden = true;
-  });
+  link.addEventListener("click", () => closeMenu());
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !mobileNav.hidden) closeMenu({ focus: true });
+});
+document.addEventListener("pointerdown", (event) => {
+  if (!mobileNav.hidden && !header.contains(event.target)) closeMenu();
+});
+window.matchMedia("(min-width: 821px)").addEventListener("change", (event) => {
+  if (event.matches) closeMenu();
 });
 
 const copyButton = document.querySelector("#copy-email");
@@ -518,8 +554,10 @@ const toast = document.querySelector("#toast");
 let toastTimer;
 copyButton.addEventListener("click", async () => {
   const email = copyButton.dataset.email;
+  let copied = false;
   try {
     await navigator.clipboard.writeText(email);
+    copied = true;
   } catch {
     const textArea = document.createElement("textarea");
     textArea.value = email;
@@ -527,14 +565,19 @@ copyButton.addEventListener("click", async () => {
     textArea.style.opacity = "0";
     document.body.append(textArea);
     textArea.select();
-    document.execCommand("copy");
+    copied = document.execCommand("copy");
     textArea.remove();
+    copyButton.focus();
   }
-  document.querySelector(".copy-label").textContent = "Copied";
+  document.querySelector(".copy-label").textContent = copied ? "Copied" : "Copy email";
+  toast.hidden = false;
+  toast.textContent = copied ? "Email address copied" : `Copy unavailable. Email ${email}`;
   toast.classList.add("is-visible");
   window.clearTimeout(toastTimer);
   toastTimer = window.setTimeout(() => {
     toast.classList.remove("is-visible");
+    toast.hidden = true;
+    toast.textContent = "";
     document.querySelector(".copy-label").textContent = "Copy email";
   }, 1600);
 });

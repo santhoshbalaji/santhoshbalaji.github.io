@@ -2,11 +2,22 @@
   "name": "santhosh-balaji-portfolio",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
-    "dev": "python3 -m http.server 4173",
-    "test": "node scripts/verify.mjs"
+    "dev": "node scripts/serve.mjs",
+    "build": "node scripts/build.mjs",
+    "test": "node --test tests/*.test.mjs && node scripts/verify.mjs",
+    "test:browser": "playwright test",
+    "test:links": "node scripts/check-links.mjs",
+    "preview:assets": "node scripts/capture-preview.mjs"
   },
   "dependencies": {
     "three": "0.185.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "esbuild": "0.28.2",
+    "lighthouse": "13.4.1",
+    "sharp": "0.35.4"
   }
 }

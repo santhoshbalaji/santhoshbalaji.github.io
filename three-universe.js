@@ -1,31 +1,34 @@
 import * as THREE from "./vendor/three.module.min.js";
+import { pointBehindSphere } from "./orbit-math.mjs";
 
 const stage = document.querySelector("#gravity-stage");
 const canvas = document.querySelector("#universe-render");
 
-if (stage && canvas) {
-  stage.dataset.threeState = "booting";
-  initialiseUniverse().catch((error) => {
-    window.clearTimeout(window.__portfolioUniverseBootTimer);
-    stage.classList.remove("has-three-universe", "has-product-orrery");
-    stage.dataset.threeState = "fallback";
-    canvas.hidden = true;
-    window.dispatchEvent(new CustomEvent("universe:fallback"));
-    console.warn("3D universe unavailable; using the accessible CSS fallback.", error);
+let initialisation = null;
+export function initialiseUniverse(signal) {
+  if (!stage || !canvas) return Promise.resolve();
+  if (signal?.aborted) return Promise.reject(new DOMException("Scene startup cancelled", "AbortError"));
+  if (!initialisation) initialisation = buildUniverse(signal).catch((error) => {
+    initialisation = null;
+    throw error;
   });
+  return initialisation;
 }
 
-async function initialiseUniverse() {
+async function buildUniverse(signal) {
   const initialisationStarted = performance.now();
   const renderer = new THREE.WebGLRenderer({
     canvas,
     alpha: true,
-    antialias: true,
-    powerPreference: "high-performance",
+    antialias: window.innerWidth > 820,
+    powerPreference: "default",
   });
   let rendererPixelRatio = 0;
+  let qualityRatio = 1;
+  let renderCost = 0;
+  let qualitySamples = 0;
   function syncPixelRatio() {
-    const nextPixelRatio = Math.min(window.devicePixelRatio || 1, window.innerWidth < 640 ? 1.35 : 1.75);
+    const nextPixelRatio = Math.min(window.devicePixelRatio || 1, qualityRatio);
     if (nextPixelRatio === rendererPixelRatio) return;
     rendererPixelRatio = nextPixelRatio;
     renderer.setPixelRatio(rendererPixelRatio);
@@ -53,8 +56,14 @@ async function initialiseUniverse() {
   scene.add(rimLight);
   const sunDirection = keyLight.position.clone().normalize();
 
-  const textureLoader = new THREE.TextureLoader();
-  const maxAnisotropy = Math.min(renderer.capabilities.getMaxAnisotropy(), 8);
+  const manager = new THREE.LoadingManager();
+  const textureReady = new Promise((resolve, reject) => {
+    manager.onLoad = resolve;
+    manager.onError = (url) => reject(new Error(`Scene texture unavailable: ${url}`));
+  });
+  const textureLoader = new THREE.TextureLoader(manager);
+  textureLoader.setCrossOrigin(null);
+  const maxAnisotropy = Math.min(renderer.capabilities.getMaxAnisotropy(), 4);
   const productDefinitions = [
     {
       key: "jurisfield",
@@ -106,10 +115,34 @@ async function initialiseUniverse() {
   const productUniverse = createProductUniverse(textureLoader, maxAnisotropy, productDefinitions, sunDirection);
   universe.add(productUniverse.group);
   const { earth, products, occluders } = productUniverse;
+  // Publish only a fully textured first frame; never flash an untextured globe.
+  let onAbort;
+  const aborted = new Promise((_, reject) => {
+    onAbort = () => reject(new DOMException("Scene startup cancelled", "AbortError"));
+    signal?.addEventListener("abort", onAbort, { once: true });
+  });
+  try {
+    await Promise.race([textureReady, aborted]);
+    // Yield between shader programs so navigation and first paint remain responsive.
+    // Each object uses the same target scene/lights as the final render.
+    if (renderer.compileAsync) {
+      const warmObjects = [];
+      scene.traverse(object => { if (object.material && object.visible) warmObjects.push(object); });
+      for (const object of warmObjects) {
+        await Promise.race([new Promise(resolve => setTimeout(resolve, 0)), aborted]);
+        await Promise.race([renderer.compileAsync(object, camera, scene), aborted]);
+      }
+    }
+  } catch (error) {
+    renderer.dispose();
+    throw error;
+  } finally {
+    signal?.removeEventListener("abort", onAbort);
+  }
 
   const raycaster = new THREE.Raycaster();
-  const occlusionRaycaster = new THREE.Raycaster();
-  const occlusionDirection = new THREE.Vector3();
+  const earthCenter = new THREE.Vector3();
+  const earthScale = new THREE.Vector3();
   const pointer = new THREE.Vector2(4, 4);
   const projected = new THREE.Vector3();
   const worldPosition = new THREE.Vector3();
@@ -128,6 +161,7 @@ async function initialiseUniverse() {
   let lastFrame = performance.now();
   let lastRenderedAt = 0;
   let animationFrame = 0;
+  let renderCount = 0;
   let sceneWidth = 1;
   let sceneHeight = 1;
   let targetFrameInterval = 1000 / 30;
@@ -172,6 +206,7 @@ async function initialiseUniverse() {
   stage.dataset.threeLogoTreatment = "camera-facing-product-plates";
   stage.dataset.threeLogoFit = "asset-specific-optical";
   stage.dataset.threeRendering = "adaptive-demand-driven";
+  stage.dataset.threeHitTesting = "analytic-sphere";
   stage.dataset.portfolioBodies = "earth-jurisfield-atlas-nammatn-mapsmith";
   function resize() {
     syncPixelRatio();
@@ -227,12 +262,14 @@ async function initialiseUniverse() {
   function render(timestamp = performance.now(), force = false) {
     window.cancelAnimationFrame(animationFrame);
     animationFrame = 0;
+    if (document.hidden || (!sceneVisible && !force)) return;
     const frameInterval = dragging ? 1000 / 45 : targetFrameInterval;
     if (!force && lastRenderedAt && timestamp - lastRenderedAt < frameInterval) {
       animationFrame = window.requestAnimationFrame(render);
       return;
     }
-    const delta = Math.min(0.05, Math.max(0, (timestamp - lastFrame) / 1000));
+    const renderStarted = performance.now();
+    const delta = Math.min(0.08, Math.max(0, (timestamp - lastFrame) / 1000));
     lastFrame = timestamp;
     lastRenderedAt = timestamp;
     if (motionEnabled) elapsed += delta;
@@ -278,6 +315,9 @@ async function initialiseUniverse() {
 
     universe.updateMatrixWorld(true);
     camera.updateMatrixWorld(true);
+    earth.mesh.getWorldPosition(earthCenter);
+    earth.mesh.getWorldScale(earthScale);
+    const earthRadius = 0.52 * earthScale.x;
     products.forEach((product) => {
       const anchor = anchors.get(product.key);
       if (!anchor) return;
@@ -289,13 +329,9 @@ async function initialiseUniverse() {
       product.group.getWorldPosition(worldPosition);
       projected.copy(worldPosition).project(camera);
       const perspectiveScale = baseCameraDistance / Math.max(80, camera.position.z - worldPosition.z);
-      const distanceToProduct = camera.position.distanceTo(worldPosition);
-      occlusionDirection.copy(worldPosition).sub(camera.position).normalize();
-      occlusionRaycaster.set(camera.position, occlusionDirection);
-      const bodyHit = occlusionRaycaster.intersectObjects(occluders, false)[0];
       const occluded = projected.z < -1
         || projected.z > 1
-        || Boolean(bodyHit && bodyHit.distance < distanceToProduct);
+        || pointBehindSphere(camera.position, worldPosition, earthCenter, earthRadius);
       if (occluded) {
         product.logoSprite.visible = false;
         product.logoBackdrop.visible = false;
@@ -306,16 +342,35 @@ async function initialiseUniverse() {
         product.logoSprite.material.opacity = selected ? 1 : 0.94;
         product.logoBackdrop.material.opacity = selected ? 0.96 : 0.78;
       }
-      anchor.style.setProperty("--scene-x", `${(projected.x * sceneWidth * 0.5).toFixed(2)}px`);
-      anchor.style.setProperty("--scene-y", `${(-projected.y * sceneHeight * 0.5).toFixed(2)}px`);
-      anchor.style.setProperty("--scene-scale", perspectiveScale.toFixed(3));
-      anchor.style.zIndex = String(Math.round(THREE.MathUtils.clamp(11 + worldPosition.z / 28, 6, 16)));
-      anchor.dataset.depthState = occluded ? "behind-earth" : "visible";
-      anchor.dataset.logoDepthState = occluded ? "hidden-behind-earth" : "front-visible";
-      anchor.classList.toggle("is-occluded", occluded);
+      const transform = `translate(calc(-50% + ${(projected.x * sceneWidth * 0.5).toFixed(1)}px), calc(-50% + ${(-projected.y * sceneHeight * 0.5).toFixed(1)}px)) scale(${perspectiveScale.toFixed(3)})`;
+      if (anchor.style.transform !== transform) anchor.style.transform = transform;
+      const depthState = occluded ? "behind-earth" : "visible";
+      if (anchor.dataset.depthState !== depthState) {
+        anchor.dataset.depthState = depthState;
+        anchor.dataset.logoDepthState = occluded ? "hidden-behind-earth" : "front-visible";
+        anchor.classList.toggle("is-occluded", occluded);
+        anchor.tabIndex = occluded ? -1 : 0;
+        anchor.setAttribute("aria-hidden", String(occluded));
+      }
     });
 
     renderer.render(scene, camera);
+    renderCount += 1;
+    renderCost += performance.now() - renderStarted;
+    qualitySamples += 1;
+    if (qualitySamples >= 90) {
+      const average = renderCost / qualitySamples;
+      const maxRatio = sceneWidth < 720 ? 1.15 : 1.5;
+      if (average > 22) qualityRatio = Math.max(0.65, qualityRatio - 0.15);
+      else if (average < 9) qualityRatio = Math.min(maxRatio, qualityRatio + 0.1);
+      syncPixelRatio();
+      stage.dataset.threeRenderMs = average.toFixed(1);
+      stage.dataset.threePixelRatio = rendererPixelRatio.toFixed(2);
+      renderCost = 0;
+      qualitySamples = 0;
+    }
+    // Low-frequency diagnostic counters are also checked in browser regressions.
+    if (renderCount % 30 === 0) stage.dataset.threeFrames = String(renderCount);
     const unsettled = Math.abs(targetRotationX - universe.rotation.x) > 0.0005
       || Math.abs(targetRotationY - universe.rotation.y) > 0.0005
       || Math.abs(targetZoom - currentZoom) > 0.0005
@@ -467,11 +522,20 @@ async function initialiseUniverse() {
   });
 
   canvas.addEventListener("wheel", (event) => {
+    if (!event.ctrlKey && !event.metaKey) return;
     event.preventDefault();
     dismissDiscovery("zoom");
     targetZoom = THREE.MathUtils.clamp(targetZoom + Math.sign(event.deltaY) * 0.085, 0.72, 1.48);
     render(performance.now(), true);
   }, { passive: false });
+
+  stage.querySelectorAll("[data-scene-zoom]").forEach((button) => {
+    button.addEventListener("click", () => {
+      dismissDiscovery("zoom-control");
+      targetZoom = THREE.MathUtils.clamp(targetZoom + Number(button.dataset.sceneZoom), 0.72, 1.48);
+      render(performance.now(), true);
+    });
+  });
 
   canvas.addEventListener("dblclick", () => {
     dismissDiscovery("reset");
@@ -529,14 +593,15 @@ async function initialiseUniverse() {
       window.cancelAnimationFrame(animationFrame);
       return;
     }
-    if (!document.hidden) {
+    if (!document.hidden && sceneVisible) {
       lastFrame = performance.now();
       render(lastFrame, true);
     }
   });
 
   const visibilityObserver = new IntersectionObserver(([entry]) => {
-    sceneVisible = entry.isIntersecting;
+    sceneVisible = entry.isIntersecting && entry.intersectionRatio >= 0.12;
+    stage.dataset.threeVisible = String(sceneVisible);
     if (!sceneVisible) {
       window.cancelAnimationFrame(animationFrame);
       return;
@@ -544,13 +609,12 @@ async function initialiseUniverse() {
     scheduleDiscovery();
     lastFrame = performance.now();
     render(lastFrame, true);
-  }, { threshold: 0.02 });
+  }, { threshold: [0, 0.12] });
   visibilityObserver.observe(stage);
 
   const resizeObserver = new ResizeObserver(resize);
   resizeObserver.observe(stage);
   resize();
-  render(performance.now(), true);
   window.clearTimeout(window.__portfolioUniverseBootTimer);
   canvas.hidden = false;
   stage.classList.add("has-three-universe", "has-product-orrery");
@@ -700,15 +764,13 @@ function createEarth(textureLoader, maxAnisotropy, sunDirection) {
   group.rotation.x = THREE.MathUtils.degToRad(20.6);
   group.rotation.z = THREE.MathUtils.degToRad(-4.2);
 
-  const geometry = new THREE.SphereGeometry(0.52, 128, 64);
-  const material = new THREE.MeshPhysicalMaterial({
+  const geometry = new THREE.SphereGeometry(0.52, 64, 40);
+  const material = new THREE.MeshStandardMaterial({
     color: 0xffffff,
     emissive: 0x01040a,
     emissiveIntensity: 0.018,
-    roughness: 1,
+    roughness: 0.93,
     metalness: 0,
-    clearcoat: 0.12,
-    clearcoatRoughness: 0.42,
     bumpScale: 0.0045,
   });
   const mesh = new THREE.Mesh(geometry, material);
@@ -727,17 +789,10 @@ function createEarth(textureLoader, maxAnisotropy, sunDirection) {
     maxAnisotropy,
     { offsetX: 0.469 },
   );
-  const roughnessMap = loadSurfaceTexture(
-    textureLoader,
-    "assets/textures/earth-roughness.webp",
-    maxAnisotropy,
-    { offsetX: 0.469 },
-  );
   material.map = colorMap;
   material.bumpMap = bumpMap;
-  material.roughnessMap = roughnessMap;
 
-  const atmosphere = createAtmosphere(0.552, 0x4f8cff, 0.34, sunDirection);
+  const atmosphere = createAtmosphere(0.528, 0x64a7df, 0.22, sunDirection);
   group.add(atmosphere);
 
   return { group, mesh, atmosphere };
@@ -745,7 +800,7 @@ function createEarth(textureLoader, maxAnisotropy, sunDirection) {
 
 function createAtmosphere(radius, color, strength, sunDirection) {
   return new THREE.Mesh(
-    new THREE.SphereGeometry(radius, 96, 48),
+    new THREE.SphereGeometry(radius, 40, 24),
     new THREE.ShaderMaterial({
       uniforms: {
         glowColor: { value: new THREE.Color(color) },
@@ -786,7 +841,7 @@ function createAtmosphere(radius, color, strength, sunDirection) {
 function createProductWorld(definition, textureLoader, maxAnisotropy, sunDirection) {
   const group = new THREE.Group();
   const maps = loadProductPlanetMaps(definition, textureLoader, maxAnisotropy);
-  const material = new THREE.MeshPhysicalMaterial({
+  const material = new THREE.MeshStandardMaterial({
     map: maps.colorMap,
     bumpMap: maps.bumpMap,
     bumpScale: definition.size * (definition.key === "atlas" ? 0.012 : 0.032),
@@ -796,10 +851,8 @@ function createProductWorld(definition, textureLoader, maxAnisotropy, sunDirecti
     emissiveIntensity: 0.018,
     roughness: 1,
     metalness: 0,
-    clearcoat: definition.key === "mapsmith" ? 0.24 : 0.04,
-    clearcoatRoughness: definition.key === "mapsmith" ? 0.32 : 0.78,
   });
-  const surface = new THREE.Mesh(new THREE.SphereGeometry(definition.size, 96, 64), material);
+  const surface = new THREE.Mesh(new THREE.SphereGeometry(definition.size, 40, 24), material);
   group.add(surface);
 
   const logoTexture = definition.key === "atlas"
@@ -877,7 +930,7 @@ function createProductWorld(definition, textureLoader, maxAnisotropy, sunDirecti
     ringTexture.colorSpace = THREE.SRGBColorSpace;
     ringTexture.anisotropy = maxAnisotropy;
     const ring = new THREE.Mesh(
-      new THREE.RingGeometry(definition.size * 1.28, definition.size * 1.82, 192),
+      new THREE.RingGeometry(definition.size * 1.28, definition.size * 1.82, 96),
       new THREE.MeshStandardMaterial({
         map: ringTexture,
         color: 0xffffff,
