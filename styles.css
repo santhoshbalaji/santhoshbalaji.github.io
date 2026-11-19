@@ -1030,3 +1030,23 @@ img { display: block; max-width: 100%; }
 .contact-section::before, .contact-section::after { opacity: .25; }
 .project-story strong { color: var(--starlight); font-weight: 650; }
 .project-story a:not(.mission-link):not(.primary-action) { border-bottom: 1px solid var(--orbit-line-strong); }
+
+/*
+ * Light pages keep the night header and footer, so every page starts and ends the same way.
+ * The night values are restated on those two bands only; everything between stays in the day theme.
+ */
+[data-theme="day"] :is(.project-header, .site-header, .site-footer) {
+  --space-void: #000000; --space-deep: #070b14; --space-raised: #0c1220;
+  --starlight: #f2f6ff; --moonlight: #aab7cb; --dust: #8c9ab0;
+  --orbit-line: rgba(159, 178, 211, 0.2); --orbit-line-strong: rgba(183, 201, 231, 0.38);
+  --signal-blue: #8fa7ff; --signal-blue-bright: #b8c6ff; --solar: #f2c96d;
+  color: var(--starlight); background: #000; box-shadow: 0 0 0 100vmax #000; clip-path: inset(0 -100vmax);
+}
+[data-theme="day"] .site-header { clip-path: none; box-shadow: none; }
+.project-header { align-items: center; padding: 1.1rem 0; border-bottom: 0; }
+.project-header nav { display: flex; gap: 1.75rem; }
+.project-header nav a { color: var(--moonlight); }
+.project-header nav a:hover { color: var(--starlight); }
+[data-theme="day"] .site-footer { margin-top: 4rem; border-top: 0; }
+[data-theme="day"] .site-footer a { color: var(--moonlight); }
+@media (max-width: 580px) { .project-header nav { gap: 1rem; } .project-header .wordmark-role { display: none; } }

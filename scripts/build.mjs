@@ -69,7 +69,7 @@ for (const pg of pages) {
 <meta property="og:title" content="${pg.label} — Santhosh Balaji S"><meta property="og:description" content="${escape(pg.description)}"><meta property="og:type" content="website"><meta property="og:image" content="https://santhoshbalaji.cloud/assets/social-card.png"><meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="${cssPath}"><script src="analytics.js?v=1" defer></script></head>
 <body class="project-page"><a class="skip-link" href="#main">Skip to content</a>
-<header class="project-header"><a href="index.html">← Home</a><a href="index.html#contact">Contact Santhosh ↗</a></header>
+<header class="project-header"><a class="wordmark" href="index.html" aria-label="Santhosh Balaji S, home"><span class="wordmark-name"><b>Santhosh</b><span>Balaji</span><em>S</em></span><span class="wordmark-role"><i aria-hidden="true"></i>Software Developer</span></a><nav aria-label="Page links"><a href="index.html">← Home</a><a href="index.html#contact">Contact ↗</a></nav></header>
 <main id="main" class="project-story" style="--active-accent:var(--signal-blue)">
 <div class="project-intro"><p class="section-label">${pg.label}</p><h1>${pg.title}</h1><p class="project-lead">${pg.lead}</p></div>
 ${pg.sections.map((sec, i) => `<section class="project-context" aria-labelledby="s${i}"><div><p class="section-label">${sec.label}</p><h2 id="s${i}">${sec.title}</h2></div><div>${sec.body}</div></section>`).join("\n")}
@@ -86,7 +86,7 @@ for (const p of projects) {
 <meta property="og:title" content="${p.name} — Product notes"><meta property="og:description" content="${escape(p.lead)}"><meta property="og:type" content="article"><meta property="og:image" content="https://santhoshbalaji.cloud/assets/social-card.png"><meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="../${cssPath}"><script src="../analytics.js?v=1" defer></script></head>
 <body class="project-page"><a class="skip-link" href="#main">Skip to content</a>
-<header class="project-header"><a href="../index.html#${p.id}">← All projects</a><a href="../index.html#contact">Contact Santhosh ↗</a></header>
+<header class="project-header"><a class="wordmark" href="../index.html" aria-label="Santhosh Balaji S, home"><span class="wordmark-name"><b>Santhosh</b><span>Balaji</span><em>S</em></span><span class="wordmark-role"><i aria-hidden="true"></i>Software Developer</span></a><nav aria-label="Page links"><a href="../index.html#${p.id}">← All projects</a><a href="../index.html#contact">Contact ↗</a></nav></header>
 <main id="main" class="project-story" style="--active-accent:var(--${p.id})">
 <div class="project-intro"><img src="../assets/logos/${p.id}.svg" width="64" height="64" alt=""><p class="section-label">${p.name} / ${p.category}</p><h1>${p.title}</h1><p class="project-lead">${p.lead}</p><p class="project-availability">${p.status}</p>${p.url && !p.unavailable ? `<a class="primary-action" href="${p.url}" target="_blank" rel="noreferrer">${p.next} ↗</a>` : ""}</div>
 ${p.image ? `<figure class="project-preview"><img src="../${p.image}" alt="${escape(p.imageAlt)}" width="1600" height="640" loading="lazy" decoding="async"><figcaption>${p.imageCaption}</figcaption></figure>` : ""}
