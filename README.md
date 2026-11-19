@@ -40,8 +40,13 @@ enforce gzip budgets of 16 KB initial JS, 220 KB total JS and 20 KB CSS.
 
 `npm run preview:assets` captures loading previews directly from the live 3D canvas
 (run the local server first). Capture again after changing the camera/composition.
-The NammaTN screenshot is a labelled interface preview with demonstration content;
-the other project pages show implementation workflows, not fabricated UI screenshots.
+The NammaTN screenshot is a labelled interface preview with demonstration content.
+The JurisField and Atlas images are dated screenshots of their public sites. MapSmith shows
+an implementation workflow only; no page uses a fabricated UI screenshot.
+
+Themes: the home page uses the night theme (`data-theme="orbital"`); project notes and the
+privacy page use the day theme (`data-theme="day"` in `theme.css`), which matches the body of
+the videos. The videos' title and closing cards use the night palette.
 
 `node scripts/serve.mjs --port 4174` provides a localhost-only gzip server for a
 closer-to-production Lighthouse comparison. Never equate local scores with live

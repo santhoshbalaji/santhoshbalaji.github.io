@@ -37,6 +37,8 @@
   --nammatn-soft: rgba(237, 120, 106, 0.13);
   --mapsmith: #63cbbb;
   --mapsmith-soft: rgba(99, 203, 187, 0.13);
+  --oriv: #e39ab0;
+  --oriv-soft: rgba(227, 154, 176, 0.13);
 
   /* Typography */
   --font-display: "Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -72,4 +74,39 @@
     --section-space: 5.5rem;
     --panel-radius: 1rem;
   }
+}
+
+/*
+ * Day: the same system in daylight, for reading pages (project notes) and for the body of the videos.
+ * Night stays on the home page, and on the videos' title and closing cards. The videos use the same
+ * day values, so change them in both places.
+ */
+[data-theme="day"] {
+  color-scheme: light;
+  --space-void: #f4f6f8;
+  --space-deep: #ffffff;
+  --space-raised: #ffffff;
+  --space-panel: #f7f8fa;
+  --space-panel-soft: #eef0f3;
+  --starlight: #0c1220;
+  --moonlight: #3c4450;
+  --dust: #5b6472;
+  --orbit-line: rgba(12, 18, 32, 0.12);
+  --orbit-line-strong: rgba(12, 18, 32, 0.26);
+  --signal-blue: #3b3fd8;
+  --signal-blue-bright: #3b3fd8;
+  --solar: #8a5a0a;
+  --aurora: #0f8a5f;
+  --danger-star: #c2412d;
+  --ultraviolet: #3b3fd8;
+  --jurisfield: #4a6800;
+  --atlas: #5540d6;
+  --nammatn: #b93a28;
+  --mapsmith: #0b7a6e;
+  --oriv: #652a3a;
+  --shadow-orbit: 0 2rem 5rem rgba(12, 18, 32, 0.12);
+  --shadow-satellite: 0 0.8rem 2rem rgba(12, 18, 32, 0.1);
+  --shadow-planet: 0 2rem 5rem rgba(12, 18, 32, 0.14);
+  --surface-glass: rgba(255, 255, 255, 0.82);
+  --surface-glass-strong: rgba(255, 255, 255, 0.94);
 }

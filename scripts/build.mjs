@@ -59,9 +59,9 @@ await writeFile("privacy.html", privacy);
 const escape = (s) => s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll('"', "&quot;");
 for (const p of projects) {
   const page = `<!doctype html>
-<html lang="en" data-theme="orbital"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<html lang="en" data-theme="day"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${p.name} — Product notes by Santhosh Balaji S</title><meta name="description" content="${escape(p.lead)}">
-<meta name="referrer" content="strict-origin-when-cross-origin"><meta name="theme-color" content="#000000">
+<meta name="referrer" content="strict-origin-when-cross-origin"><meta name="theme-color" content="#f4f6f8">
 <link rel="canonical" href="https://santhoshbalaji.cloud/work/${p.id}.html"><link rel="icon" href="../favicon.svg" type="image/svg+xml">
 <meta property="og:title" content="${p.name} — Product notes"><meta property="og:description" content="${escape(p.lead)}"><meta property="og:type" content="article"><meta property="og:image" content="https://santhoshbalaji.cloud/assets/social-card.png"><meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="../${cssPath}"><script src="../analytics.js?v=1" defer></script></head>
