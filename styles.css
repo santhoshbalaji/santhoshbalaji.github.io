@@ -1084,3 +1084,8 @@ img { display: block; max-width: 100%; }
 .hero-actions { flex-wrap: wrap; gap: 1rem 1.6rem; margin-top: 2rem; }
 .hero-more { color: var(--moonlight); font-size: .9375rem; font-weight: 600; border-bottom: 1px solid var(--orbit-line-strong); padding: .2rem 0; }
 .hero-more:hover { color: var(--starlight); border-color: var(--solar); }
+
+/* The product card sits directly above the zoom controls, bottom right of the 3D stage (desktop). */
+@media (min-width: 961px) {
+  .hero .orbit-readout { top: auto; left: auto; right: 3%; bottom: calc(5% + 4.25rem); width: min(17rem,24vw); }
+}
