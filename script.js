@@ -3,10 +3,10 @@ const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)
 let motionRunning = !prefersReducedMotion.matches;
 
 const projectData = {
-  jurisfield: { name: "JurisField", className: "Field operations system", orbitClass: "Field operations", orbitCode: "01 / 04", orbitNote: "Trusted evidence from field to office.", logo: "assets/logos/jurisfield.svg" },
-  atlas: { name: "Atlas", className: "AI media system", orbitClass: "AI media", orbitCode: "02 / 04", orbitNote: "An inspectable path from research to video.", logo: "assets/logos/atlas.svg" },
-  nammatn: { name: "NammaTN", className: "Civic technology system", orbitClass: "Civic technology", orbitCode: "03 / 04", orbitNote: "Public reporting with visible follow-through.", logo: "assets/logos/nammatn.svg" },
-  mapsmith: { name: "MapSmith", className: "Enterprise GIS platform", orbitClass: "Enterprise GIS", orbitCode: "04 / 04", orbitNote: "A programmable core for spatial systems.", logo: "assets/logos/mapsmith.svg" },
+  jurisfield: { name: "JurisField", className: "Field operations system", orbitClass: "Field operations", orbitCode: "04 / 04", orbitNote: "Trusted evidence from field to office.", logo: "assets/logos/jurisfield.svg" },
+  oriv: { name: "Oriv", className: "Native browser", orbitClass: "Native browser", orbitCode: "03 / 04", orbitNote: "A private browser on the system’s own engine.", logo: "assets/logos/oriv.svg" },
+  nammatn: { name: "NammaTN", className: "Civic technology system", orbitClass: "Civic technology", orbitCode: "02 / 04", orbitNote: "Public reporting with visible follow-through.", logo: "assets/logos/nammatn.svg" },
+  mapsmith: { name: "MapSmith", className: "Enterprise GIS platform", orbitClass: "Enterprise GIS", orbitCode: "01 / 04", orbitNote: "A programmable core for spatial systems.", logo: "assets/logos/mapsmith.svg" },
 };
 
 const missionTabs = [...document.querySelectorAll(".mission-tab")];
@@ -210,7 +210,7 @@ const orbitPaths = new Map(
 );
 const orbitConfiguration = {
   jurisfield: { radiusX: 0.24, radiusY: 0.11, duration: 18000, phase: Math.PI * 0.55, rotation: -4 },
-  atlas: { radiusX: 0.32, radiusY: 0.15, duration: 26000, phase: -Math.PI / 2, rotation: 2 },
+  oriv: { radiusX: 0.32, radiusY: 0.15, duration: 26000, phase: -Math.PI / 2, rotation: 2 },
   nammatn: { radiusX: 0.4, radiusY: 0.19, duration: 38000, phase: Math.PI * 0.05, rotation: -1 },
   mapsmith: { radiusX: 0.47, radiusY: 0.235, duration: 54000, phase: Math.PI * 1.05, rotation: 4 },
 };
@@ -219,7 +219,7 @@ const orbitReadoutLogo = document.querySelector("#orbit-readout-logo");
 const orbitReadoutName = document.querySelector("#orbit-readout-name");
 const orbitReadoutClass = document.querySelector("#orbit-readout-class");
 const orbitReadoutNote = document.querySelector("#orbit-readout-note");
-const activeOrbitOrder = ["jurisfield", "atlas", "nammatn", "mapsmith"];
+const activeOrbitOrder = ["mapsmith", "nammatn", "oriv", "jurisfield"];
 const activeOrbitCycleMs = 3200;
 const initialActiveOrbitDelayMs = 6400;
 const pointer = { x: 0, y: 0, targetX: 0, targetY: 0 };
@@ -287,7 +287,7 @@ window.addEventListener("universe:release", () => {
   activeOrbitInteractionLocked = false;
   scheduleActiveOrbitCycle();
 });
-setActiveOrbit("jurisfield");
+setActiveOrbit("mapsmith");
 scheduleActiveOrbitCycle(initialActiveOrbitDelayMs);
 new IntersectionObserver(([entry]) => {
   orbitInView = entry.isIntersecting;

@@ -53,6 +53,10 @@ export const projects = [
   },
   {
     id: "mapsmith", name: "MapSmith", category: "Enterprise GIS",
+    image: "assets/projects/mapsmith-site.webp",
+    imageAlt: "MapSmith map workspace: a location file published as a layer on a map",
+    imageCaption: "From the walkthrough on the MapSmith site, captured on 19 November 2026. It uses illustrative weather data.",
+    url: "https://mapsmith.santhoshbalaji.cloud/", next: "Visit MapSmith",
     title: "A spatial platform you can build on.",
     lead: "An enterprise GIS platform that connects spatial data, map authoring and analysis with programmable APIs and a CLI.",
     audience: "Developers and teams publishing and operating spatial services.",
@@ -63,7 +67,7 @@ export const projects = [
     stack: ["Angular", "Go", "PostGIS", "MapLibre", "Keycloak", "Docker"],
     steps: [["Data & services", "Publish collections and serve spatial features and vector tiles."], ["Maps & analysis", "Author maps and run server-side spatial operations."], ["SDK & automation", "Use APIs and the CLI for publishing, queries and platform workflows."]],
     facts: ["PostGIS-backed vector tiles and hosted collections", "Server-side analysis producing new spatial layers", "SDK and CLI access to the same platform services", "One of many use cases: forest-fire monitoring and prevention"],
-    status: "Self-hosted platform · architecture notes",
+    status: "Public product site",
   },
   {
     id: "oriv", name: "Oriv", category: "Native browser",

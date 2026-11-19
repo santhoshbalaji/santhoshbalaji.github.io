@@ -1,28 +1,28 @@
 import { test, expect } from "@playwright/test";
-const products = ["jurisfield", "atlas", "nammatn", "mapsmith"];
+const products = ["mapsmith", "nammatn", "oriv", "jurisfield"];
 
-for (const width of [1440, 390]) test(`Atlas live links and project notes at ${width}px`, async ({ page }) => {
+for (const width of [1440, 390]) test(`Oriv live links and project notes at ${width}px`, async ({ page }) => {
   await page.setViewportSize({ width, height: 900 });
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.goto("/#atlas");
-  const panel = page.locator("#atlas");
+  await page.goto("/#oriv");
+  const panel = page.locator("#oriv");
   await expect(panel).toBeVisible();
-  const visit = panel.getByRole("link", { name: "Visit Atlas" });
+  const visit = panel.getByRole("link", { name: "Oriv on GitHub" });
   await expect(visit).toBeVisible();
-  await expect(visit).toHaveAttribute("href", "https://atlas.santhoshbalaji.cloud/");
+  await expect(visit).toHaveAttribute("href", "https://github.com/santhoshbalaji/Oriv");
   await expect(visit).toHaveAttribute("target", "_blank");
   await expect(visit).toHaveAttribute("rel", "noreferrer");
   await expect(panel).not.toContainText("temporarily unavailable");
   await panel.scrollIntoViewIfNeeded();
-  await page.screenshot({ path: `test-results/atlas-restored-panel-${width}.png` });
-  await panel.getByRole("link", { name: "Explore the pipeline" }).click();
-  await expect(page).toHaveURL(/\/work\/atlas\.html$/);
-  await expect(page.getByText("Public product site", { exact: true })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Visit Atlas" })).toHaveAttribute("href", "https://atlas.santhoshbalaji.cloud/");
-  await expect(page.getByRole("link", { name: "Visit Atlas" })).toBeVisible();
+  await page.screenshot({ path: `test-results/oriv-restored-panel-${width}.png` });
+  await panel.getByRole("link", { name: "Read the project notes" }).click();
+  await expect(page).toHaveURL(/\/work\/oriv\.html$/);
+  await expect(page.getByText("Open source · MIT licence · built from source", { exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "View Oriv on GitHub" })).toHaveAttribute("href", "https://github.com/santhoshbalaji/Oriv");
+  await expect(page.getByRole("link", { name: "View Oriv on GitHub" })).toBeVisible();
   await expect(page.locator("body")).not.toContainText("temporarily unavailable");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.screenshot({ path: `test-results/atlas-restored-notes-${width}.png` });
+  await page.screenshot({ path: `test-results/oriv-restored-notes-${width}.png` });
 });
 
 test("automatic 3D, depth states, pause, ordinary scrolling and project panels", async ({ page }) => {

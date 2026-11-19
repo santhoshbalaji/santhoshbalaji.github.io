@@ -77,13 +77,13 @@ async function buildUniverse(signal) {
       textureStyle: "terrain",
     },
     {
-      key: "atlas",
-      color: 0x6257ff,
-      deep: 0x11104a,
+      key: "oriv",
+      color: 0xc45a78,
+      deep: 0x2a0f18,
       radius: 1.8,
       size: 0.25,
-      logo: "assets/logos/atlas.svg",
-      logoScale: [1.08, 0.82],
+      logo: "assets/logos/oriv.svg",
+      logoScale: [0.92, 0.92],
       logoPlateScale: 1.54,
       textureStyle: "bands",
       ringed: true,
@@ -207,7 +207,7 @@ async function buildUniverse(signal) {
   stage.dataset.threeLogoFit = "asset-specific-optical";
   stage.dataset.threeRendering = "adaptive-demand-driven";
   stage.dataset.threeHitTesting = "analytic-sphere";
-  stage.dataset.portfolioBodies = "earth-jurisfield-atlas-nammatn-mapsmith";
+  stage.dataset.portfolioBodies = "earth-jurisfield-oriv-nammatn-mapsmith";
   function resize() {
     syncPixelRatio();
     const width = Math.max(1, stage.clientWidth);
@@ -844,7 +844,7 @@ function createProductWorld(definition, textureLoader, maxAnisotropy, sunDirecti
   const material = new THREE.MeshStandardMaterial({
     map: maps.colorMap,
     bumpMap: maps.bumpMap,
-    bumpScale: definition.size * (definition.key === "atlas" ? 0.012 : 0.032),
+    bumpScale: definition.size * (definition.key === "oriv" ? 0.012 : 0.032),
     roughnessMap: maps.roughnessMap,
     color: 0xffffff,
     emissive: definition.deep,
@@ -855,9 +855,7 @@ function createProductWorld(definition, textureLoader, maxAnisotropy, sunDirecti
   const surface = new THREE.Mesh(new THREE.SphereGeometry(definition.size, 40, 24), material);
   group.add(surface);
 
-  const logoTexture = definition.key === "atlas"
-    ? createAtlasLogoTexture()
-    : definition.key === "jurisfield"
+  const logoTexture = definition.key === "jurisfield"
       ? createJurisFieldLogoTexture()
       : definition.key === "mapsmith"
         ? createMapSmithLogoTexture()
@@ -907,7 +905,7 @@ function createProductWorld(definition, textureLoader, maxAnisotropy, sunDirecti
   hitTarget.userData.project = definition.key;
   group.add(hitTarget);
 
-  const atmosphereStrength = definition.key === "mapsmith" ? 0.18 : definition.key === "atlas" ? 0.11 : 0.14;
+  const atmosphereStrength = definition.key === "mapsmith" ? 0.18 : definition.key === "oriv" ? 0.11 : 0.14;
   const atmosphere = createAtmosphere(
     definition.size * 1.045,
     definition.color,
@@ -1087,7 +1085,7 @@ function createLogoPlateTexture(colorValue) {
   return texture;
 }
 
-function createAtlasLogoTexture() {
+function createOrivLogoTexture() {
   const canvasTexture = document.createElement("canvas");
   canvasTexture.width = 360;
   canvasTexture.height = 256;
