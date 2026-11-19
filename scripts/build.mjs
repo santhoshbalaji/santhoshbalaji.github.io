@@ -72,7 +72,7 @@ for (const pg of pages) {
 <header class="project-header"><a class="wordmark" href="index.html" aria-label="Santhosh Balaji S, home"><span class="wordmark-name"><b>Santhosh</b><span>Balaji</span><em>S</em></span><span class="wordmark-role"><i aria-hidden="true"></i>Software Developer</span></a><nav aria-label="Page links"><a href="index.html">← Home</a><a href="index.html#contact">Contact ↗</a></nav></header>
 <main id="main" class="project-story" style="--active-accent:var(--signal-blue)">
 <div class="project-intro"><p class="section-label">${pg.label}</p><h1>${pg.title}</h1><p class="project-lead">${pg.lead}</p></div>
-${pg.sections.map((sec, i) => `<section class="project-context" aria-labelledby="s${i}"><div><p class="section-label">${sec.label}</p><h2 id="s${i}">${sec.title}</h2></div><div>${sec.body}</div></section>`).join("\n")}
+${pg.sections.map((sec, i) => sec.wide ? `<section class="page-wide" aria-labelledby="s${i}"><p class="section-label">${sec.label}</p><h2 id="s${i}">${sec.title}</h2>${sec.body}</section>` : `<section class="project-context" aria-labelledby="s${i}"><div><p class="section-label">${sec.label}</p><h2 id="s${i}">${sec.title}</h2></div><div>${sec.body}</div></section>`).join("\n")}
 <footer class="project-next"><p>${pg.next[0]}</p><a class="mission-link" href="${pg.next[2]}">${pg.next[1]} →</a><a href="index.html">Back to the home page</a></footer></main>
 <footer class="site-footer"><p>© 2026 Santhosh Balaji S</p><a href="privacy.html">Privacy</a></footer></body></html>`;
   await writeFile(`${pg.id}.html`, page);

@@ -1065,3 +1065,16 @@ img { display: block; max-width: 100%; }
 .usage-table th:first-child { text-align: left; font-weight: 600; color: var(--starlight); }
 .usage-table thead th { color: var(--dust); font-size: .8125rem; font-weight: 500; }
 @media (max-width: 580px) { .usage-stats { grid-template-columns: 1fr; gap: 1rem; } }
+
+/* Services page: ruled grids in place of long paragraphs. */
+.project-context > div > p + p { margin-top: 1.1rem; }
+.page-wide h2 { margin: .9rem 0 0; }
+.service-grid, .engage-steps { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 0 3.5rem; margin: 2.25rem 0 0; padding: 0; list-style: none; }
+.service-grid.three { grid-template-columns: repeat(3, minmax(0,1fr)); }
+.engage-steps { grid-template-columns: repeat(4, minmax(0,1fr)); gap: 0 2.5rem; counter-reset: step; }
+.service-grid li, .engage-steps li { padding: 1.4rem 0 1.6rem; border-top: 1px solid var(--orbit-line-strong); }
+.service-grid h3, .engage-steps h3 { margin: 0; font: 600 1.125rem/1.25 var(--font-display); letter-spacing: -.02em; color: var(--starlight); }
+.service-grid p, .engage-steps p { margin: .5rem 0 0; color: var(--moonlight); font-size: .9375rem; line-height: 1.6; }
+.engage-steps li { counter-increment: step; }
+.engage-steps h3::before { content: counter(step) ". "; color: var(--solar); }
+@media (max-width: 860px) { .service-grid, .service-grid.three, .engage-steps { grid-template-columns: 1fr; } }
