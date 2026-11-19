@@ -1078,3 +1078,14 @@ img { display: block; max-width: 100%; }
 .engage-steps li { counter-increment: step; }
 .engage-steps h3::before { content: counter(step) ". "; color: var(--solar); }
 @media (max-width: 860px) { .service-grid, .service-grid.three, .engage-steps { grid-template-columns: 1fr; } }
+
+/* Hero: a short statement, three facts, then the actions. */
+.hero-lede { max-width: 27rem; }
+.hero-proof { display: grid; gap: .55rem; max-width: 30rem; margin: 1.6rem 0 0; padding: 1.1rem 0 0; list-style: none; border-top: 1px solid var(--orbit-line); }
+.hero-proof li { display: grid; grid-template-columns: 6.5rem minmax(0,1fr); gap: 1rem; font-size: .9375rem; line-height: 1.45; }
+.hero-proof b { color: var(--solar); font-weight: 600; }
+.hero-proof span { color: var(--moonlight); }
+.hero-actions { flex-wrap: wrap; gap: 1rem 1.6rem; margin-top: 2rem; }
+.hero-more { color: var(--moonlight); font-size: .9375rem; font-weight: 600; border-bottom: 1px solid var(--orbit-line-strong); padding: .2rem 0; }
+.hero-more:hover { color: var(--starlight); border-color: var(--solar); }
+@media (max-width: 580px) { .hero-proof li { grid-template-columns: 1fr; gap: .1rem; } }
