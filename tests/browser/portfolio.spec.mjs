@@ -17,7 +17,7 @@ for (const width of [1440, 390]) test(`Oriv live links and project notes at ${wi
   await page.screenshot({ path: `test-results/oriv-restored-panel-${width}.png` });
   await panel.getByRole("link", { name: "Read the project notes" }).click();
   await expect(page).toHaveURL(/\/work\/oriv\.html$/);
-  await expect(page.getByText("Open source · MIT licence · built from source", { exact: true })).toBeVisible();
+  await expect(page.getByText("Open source and in active development", { exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "View Oriv on GitHub" })).toHaveAttribute("href", "https://github.com/santhoshbalaji/Oriv");
   await expect(page.getByRole("link", { name: "View Oriv on GitHub" })).toBeVisible();
   await expect(page.locator("body")).not.toContainText("temporarily unavailable");
