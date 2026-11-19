@@ -1003,3 +1003,30 @@ img { display: block; max-width: 100%; }
   .contact-section { padding-top: 5rem; padding-bottom: 4.5rem; }
   .service-list { margin-top: 2.25rem; gap: 1.6rem; }
 }
+
+/*
+ * Simpler look (19 Nov 2026): one typeface for everything except code, sentence-case labels,
+ * and a plain contact block in place of the console card. The Earth stays the one expressive element.
+ */
+.wordmark-role, .site-nav a, .motion-control, .menu-button, .identity-copy small, .section-label,
+.mission-tab small, .career-trace-heading span, .career-trace-heading small, .career-node small,
+.career-note small, .contact-email small, .social-links a, .site-footer p, .footer-links a,
+.orbit-readout-status, .orbit-readout-project small, .stage-control, .stage-reset, .stage-motion,
+.universe-activate strong, .universe-activate small, .universe-discovery strong, .universe-discovery small,
+.universe-boot small, .project-flow b { font-family: var(--font-body); text-transform: none; letter-spacing: 0; }
+.site-nav a { font-size: .875rem; font-weight: 500; }
+.section-label { font-size: .8125rem; font-weight: 600; }
+.hero-lede a, .contact-copy > p a { color: var(--starlight); border-bottom: 1px solid var(--orbit-line-strong); white-space: nowrap; }
+.hero-lede a:hover, .contact-copy > p a:hover { border-color: var(--solar); }
+.mission-proof { margin: .9rem 0 0; color: var(--dust); font-size: .875rem; line-height: 1.5; }
+.contact-console { padding: 0; border: 0; background: none; box-shadow: none; overflow: visible; }
+.contact-console::before, .contact-console::after { content: none; }
+.contact-status { display: none; }
+.contact-email { padding: 0; }
+.contact-email strong { font-size: 1.5rem; }
+.social-links { margin: 1.5rem 0 0; border-top: 0; display: flex; flex-wrap: wrap; gap: .5rem 1.75rem; }
+.social-links a { min-height: 2.75rem; padding: 0; justify-content: flex-start; font-size: .9375rem; }
+.social-links a + a { padding-left: 0; border-left: 0; }
+.contact-section::before, .contact-section::after { opacity: .25; }
+.project-story strong { color: var(--starlight); font-weight: 650; }
+.project-story a:not(.mission-link):not(.primary-action) { border-bottom: 1px solid var(--orbit-line-strong); }

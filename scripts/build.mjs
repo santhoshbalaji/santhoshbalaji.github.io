@@ -2,13 +2,14 @@ import { build } from "esbuild";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { projects } from "../projects.mjs";
+import { pages } from "../pages.mjs";
 import sharp from "sharp";
 
 const root = new URL("../", import.meta.url);
 process.chdir(root.pathname);
 await mkdir("assets/build", { recursive: true });
 await mkdir("work", { recursive: true });
-await sharp(Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630"><rect width="1200" height="630" fill="#000"/><ellipse cx="1030" cy="340" rx="300" ry="190" fill="none" stroke="#242c42"/><ellipse cx="1030" cy="340" rx="390" ry="250" fill="none" stroke="#151c2b"/><circle cx="940" cy="175" r="8" fill="#b8d94b"/><circle cx="1090" cy="511" r="7" fill="#8f78ff"/><text x="80" y="110" fill="#aab7cb" font-family="Helvetica,Arial,sans-serif" font-size="24">SANTHOSH BALAJI S</text><text x="76" y="275" fill="#f2f6ff" font-family="Helvetica,Arial,sans-serif" font-size="70" font-weight="600">I build systems that</text><text x="76" y="360" fill="#b8c6ff" font-family="Helvetica,Arial,sans-serif" font-size="70" font-weight="600">hold up in the real world.</text><path d="M80 440H140" stroke="#b8c6ff" stroke-width="2"/><text x="80" y="492" fill="#aab7cb" font-family="Helvetica,Arial,sans-serif" font-size="24">Software developer · Product engineering · Chennai</text><text x="80" y="554" fill="#8c9ab0" font-family="Helvetica,Arial,sans-serif" font-size="22">santhoshbalaji.cloud</text></svg>`)).png().toFile("assets/social-card.png");
+await sharp(Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630"><rect width="1200" height="630" fill="#000"/><ellipse cx="1030" cy="340" rx="300" ry="190" fill="none" stroke="#242c42"/><ellipse cx="1030" cy="340" rx="390" ry="250" fill="none" stroke="#151c2b"/><circle cx="940" cy="175" r="8" fill="#b8d94b"/><circle cx="1090" cy="511" r="7" fill="#8f78ff"/><text x="80" y="110" fill="#aab7cb" font-family="Helvetica,Arial,sans-serif" font-size="24">SANTHOSH BALAJI S</text><text x="76" y="275" fill="#f2f6ff" font-family="Helvetica,Arial,sans-serif" font-size="70" font-weight="600">I build GIS platforms</text><text x="76" y="360" fill="#b8c6ff" font-family="Helvetica,Arial,sans-serif" font-size="70" font-weight="600">and AI agent systems.</text><path d="M80 440H140" stroke="#b8c6ff" stroke-width="2"/><text x="80" y="492" fill="#aab7cb" font-family="Helvetica,Arial,sans-serif" font-size="24">Software developer · Product engineering · Chennai</text><text x="80" y="554" fill="#8c9ab0" font-family="Helvetica,Arial,sans-serif" font-size="22">santhoshbalaji.cloud</text></svg>`)).png().toFile("assets/social-card.png");
 const result = await build({
   entryPoints: { site: "script.js" }, outdir: "assets/build", bundle: true,
   splitting: true, format: "esm", minify: true, target: "es2022",
@@ -57,6 +58,25 @@ privacy = privacy.replace("</head>", `<link data-site-css rel="stylesheet" href=
 await writeFile("privacy.html", privacy);
 
 const escape = (s) => s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll('"', "&quot;");
+
+// Reading pages: About and Work with me. Same day theme and stylesheet as the project notes.
+for (const pg of pages) {
+  const page = `<!doctype html>
+<html lang="en" data-theme="day"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${pg.label} — Santhosh Balaji S</title><meta name="description" content="${escape(pg.description)}">
+<meta name="referrer" content="strict-origin-when-cross-origin"><meta name="theme-color" content="#f4f6f8">
+<link rel="canonical" href="https://santhoshbalaji.cloud/${pg.id}.html"><link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta property="og:title" content="${pg.label} — Santhosh Balaji S"><meta property="og:description" content="${escape(pg.description)}"><meta property="og:type" content="website"><meta property="og:image" content="https://santhoshbalaji.cloud/assets/social-card.png"><meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="${cssPath}"><script src="analytics.js?v=1" defer></script></head>
+<body class="project-page"><a class="skip-link" href="#main">Skip to content</a>
+<header class="project-header"><a href="index.html">← Home</a><a href="index.html#contact">Contact Santhosh ↗</a></header>
+<main id="main" class="project-story" style="--active-accent:var(--signal-blue)">
+<div class="project-intro"><p class="section-label">${pg.label}</p><h1>${pg.title}</h1><p class="project-lead">${pg.lead}</p></div>
+${pg.sections.map((sec, i) => `<section class="project-context" aria-labelledby="s${i}"><div><p class="section-label">${sec.label}</p><h2 id="s${i}">${sec.title}</h2></div><div>${sec.body}</div></section>`).join("\n")}
+<footer class="project-next"><p>${pg.next[0]}</p><a class="mission-link" href="${pg.next[2]}">${pg.next[1]} →</a><a href="index.html">Back to the home page</a></footer></main>
+<footer class="site-footer"><p>© 2026 Santhosh Balaji S</p><a href="privacy.html">Privacy</a></footer></body></html>`;
+  await writeFile(`${pg.id}.html`, page);
+}
 for (const p of projects) {
   const page = `<!doctype html>
 <html lang="en" data-theme="day"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
