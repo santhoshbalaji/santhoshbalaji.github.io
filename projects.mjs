@@ -46,9 +46,9 @@ export const projects = [
     stack: ["Angular", "Go", "PostgreSQL", "PostGIS", "D3 Geo", "Docker"],
     steps: [["Report locally", "Describe an issue with its place and supporting context."], ["Verify together", "Add community evidence and jurisdiction context."], ["Follow the record", "Return to the public trail and track reported follow-through."]],
     facts: ["Tamil and English interface", "Location-aware reporting and map views", "Community verification and transparent tracking"],
-    image: "assets/projects/nammatn-interface.webp",
-    imageAlt: "NammaTN mobile interface preview showing sign-in, community feed, reporting, verification and a map",
-    imageCaption: "Product interface preview from the NammaTN project. The examples shown are demonstration content, not usage or adoption statistics.",
+    image: "assets/projects/nammatn-site-wide.webp",
+    imageAlt: "The NammaTN site: report a civic issue and track it, with a map of reports across Tamil Nadu",
+    imageCaption: "The live NammaTN site, captured on 19 November 2026.",
     url: "https://nammatn.in/", status: "Public product site", next: "Visit NammaTN",
   },
   {
