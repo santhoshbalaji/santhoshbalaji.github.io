@@ -102,3 +102,37 @@ await writeFile("sitemap.xml", `<?xml version="1.0" encoding="UTF-8"?>\n<urlset 
 await writeFile("robots.txt", "User-agent: *\nAllow: /\nSitemap: https://santhoshbalaji.cloud/sitemap.xml\n");
 await writeFile("build-manifest.json", JSON.stringify({ entry, css: cssPath, outputs: Object.keys(result.metafile.outputs) }, null, 2) + "\n");
 console.log(`Built ${entry}, ${cssPath} and ${projects.length} project pages.`);
+
+// AI usage page, from usage.json (written by `npm run usage` from local T3 Code records).
+import { existsSync } from "node:fs";
+if (existsSync("usage.json")) {
+  const u = JSON.parse(await readFile("usage.json", "utf8"));
+  const n = (v) => v >= 1e9 ? (v / 1e9).toFixed(2) + " billion" : v >= 1e6 ? (v / 1e6).toFixed(1) + " million" : Math.round(v).toLocaleString("en-GB");
+  const short = (v) => v >= 1e9 ? (v / 1e9).toFixed(2) + "B" : v >= 1e6 ? (v / 1e6).toFixed(1) + "M" : Math.round(v).toLocaleString("en-GB");
+  const date = (d) => new Date(d + "T00:00:00Z").toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+  const fresh = (x) => Math.max(0, x.input - x.cached);
+  const max = Math.max(...u.days.map((d) => d.output));
+  const row = (name, x) => `<tr><th scope="row">${name}</th><td>${x.turns.toLocaleString("en-GB")}</td><td>${short(x.input)}</td><td>${short(fresh(x))}</td><td>${short(x.output)}</td></tr>`;
+  const head = `<thead><tr><th scope="col"></th><th scope="col">Turns</th><th scope="col">Tokens processed</th><th scope="col">New input</th><th scope="col">Output</th></tr></thead>`;
+  const provRows = Object.entries(u.providers).sort((a, b) => b[1].input - a[1].input).map(([k, x]) => row(k, x)).join("");
+  const modelRows = Object.entries(u.models).sort((a, b) => b[1].input - a[1].input).map(([k, x]) => row(k, x)).join("");
+  const bars = u.days.map((d) => `<li><span>${date(d.day).replace(/ \d{4}$/, "")}</span><i style="width:${Math.max(1, (d.output / max) * 100).toFixed(1)}%"></i><b>${short(d.output)}</b></li>`).join("");
+  const page = `<!doctype html>
+<html lang="en" data-theme="day"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI usage — Santhosh Balaji S</title><meta name="description" content="How many tokens my AI coding agents used, by provider, model and day, from my own records.">
+<meta name="referrer" content="strict-origin-when-cross-origin"><meta name="theme-color" content="#f4f6f8">
+<link rel="canonical" href="https://santhoshbalaji.cloud/usage.html"><link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta property="og:title" content="AI usage — Santhosh Balaji S"><meta property="og:type" content="website"><meta property="og:image" content="https://santhoshbalaji.cloud/assets/social-card.png"><meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="${cssPath}"><script src="analytics.js?v=1" defer></script></head>
+<body class="project-page"><a class="skip-link" href="#main">Skip to content</a>
+<header class="project-header"><a class="wordmark" href="index.html" aria-label="Santhosh Balaji S, home"><span class="wordmark-name"><b>Santhosh</b><span>Balaji</span><em>S</em></span><span class="wordmark-role"><i aria-hidden="true"></i>Software Developer</span></a><nav aria-label="Page links"><a href="about.html">← About</a><a href="index.html#contact">Contact ↗</a></nav></header>
+<main id="main" class="project-story" style="--active-accent:var(--signal-blue)">
+<div class="project-intro"><p class="section-label">AI usage</p><h1>${n(u.total.output)} tokens written by agents.</h1><p class="project-lead">From ${date(u.from)} to ${date(u.to)}, across ${u.threads.toLocaleString("en-GB")} agent threads and ${u.total.turns.toLocaleString("en-GB")} turns. These are my own records, read from the tool I run the agents in.</p></div>
+<section class="project-context" aria-labelledby="u1"><div><p class="section-label">Totals</p><h2 id="u1">What the numbers mean.</h2></div><div><ul class="usage-stats"><li><b>${short(u.total.output)}</b><span>Output: what the agents wrote</span></li><li><b>${short(fresh(u.total))}</b><span>New input: what they read for the first time</span></li><li><b>${short(u.total.input)}</b><span>Processed in total, mostly cached re-reads</span></li></ul><p>An agent re-reads its whole conversation on every turn. Those re-reads are cached and billed at a small fraction of the normal rate, which is why the processed total is so much larger than the other two.</p></div></section>
+<section aria-labelledby="u2"><p class="section-label">By day</p><h2 id="u2">Output tokens per day.</h2><ol class="usage-days">${bars}</ol></section>
+<section aria-labelledby="u3"><p class="section-label">By provider</p><h2 id="u3">Who did the work.</h2><div class="usage-table"><table>${head}<tbody>${provRows}</tbody></table></div></section>
+<section aria-labelledby="u4"><p class="section-label">By model</p><h2 id="u4">Where the model was recorded.</h2><div class="usage-table"><table>${head}<tbody>${modelRows}</tbody></table></div><p class="diagram-note">The model name was not recorded for every turn, so this table covers fewer turns than the provider table. Days are in UTC. Updated ${date(u.generatedAt)}.</p></section>
+<footer class="project-next"><p>Want this way of working on your project?</p><a class="mission-link" href="work-with-me.html">Work with me →</a><a href="about.html">Back to About</a></footer></main>
+<footer class="site-footer"><p>© 2026 Santhosh Balaji S</p><a href="privacy.html">Privacy</a></footer></body></html>`;
+  await writeFile("usage.html", page);
+}

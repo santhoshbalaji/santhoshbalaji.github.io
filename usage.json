@@ -1,0 +1,278 @@
+{
+ "generatedAt": "2026-11-19",
+ "from": "2026-11-02",
+ "to": "2026-11-19",
+ "threads": 305,
+ "total": {
+  "turns": 2099,
+  "input": 10273991478,
+  "cached": 10158933611,
+  "cacheWrites": 82750477,
+  "output": 35125275,
+  "reasoning": 12335615
+ },
+ "providers": {
+  "Claude Code (Anthropic)": {
+   "turns": 1899,
+   "input": 8372381874,
+   "cached": 8289568575,
+   "cacheWrites": 82750477,
+   "output": 25467601,
+   "reasoning": 7221868
+  },
+  "Codex (OpenAI)": {
+   "turns": 198,
+   "input": 1899024706,
+   "cached": 1868121344,
+   "cacheWrites": 0,
+   "output": 9644465,
+   "reasoning": 5109311
+  },
+  "Other": {
+   "turns": 1,
+   "input": 67657,
+   "cached": 44928,
+   "cacheWrites": 0,
+   "output": 1016,
+   "reasoning": 26
+  },
+  "Antigravity (Google)": {
+   "turns": 1,
+   "input": 2517241,
+   "cached": 1198764,
+   "cacheWrites": 0,
+   "output": 12193,
+   "reasoning": 4410
+  }
+ },
+ "models": {
+  "claude-opus-5-5": {
+   "turns": 730,
+   "input": 3020576993,
+   "cached": 2983517915,
+   "cacheWrites": 37031002,
+   "output": 10825637,
+   "reasoning": 2906248
+  },
+  "claude-fable-5-2": {
+   "turns": 221,
+   "input": 332210090,
+   "cached": 324763723,
+   "cacheWrites": 7443649,
+   "output": 1215239,
+   "reasoning": 348432
+  },
+  "claude-sonnet-5-5": {
+   "turns": 25,
+   "input": 154212762,
+   "cached": 152165116,
+   "cacheWrites": 2045684,
+   "output": 734538,
+   "reasoning": 157620
+  },
+  "claude-haiku-5-5": {
+   "turns": 1,
+   "input": 14518903,
+   "cached": 14313672,
+   "cacheWrites": 205049,
+   "output": 61794,
+   "reasoning": 34277
+  },
+  "gpt-6.1-sol": {
+   "turns": 44,
+   "input": 705053187,
+   "cached": 696360192,
+   "cacheWrites": 0,
+   "output": 3618816,
+   "reasoning": 2173119
+  },
+  "gpt-6-astra": {
+   "turns": 2,
+   "input": 1876718,
+   "cached": 1663360,
+   "cacheWrites": 0,
+   "output": 16625,
+   "reasoning": 6048
+  },
+  "gpt-6.2-astra": {
+   "turns": 3,
+   "input": 771171,
+   "cached": 728832,
+   "cacheWrites": 0,
+   "output": 3795,
+   "reasoning": 25
+  },
+  "gpt-6.2-sol": {
+   "turns": 3,
+   "input": 46991167,
+   "cached": 46181888,
+   "cacheWrites": 0,
+   "output": 124096,
+   "reasoning": 37345
+  }
+ },
+ "days": [
+  {
+   "day": "2026-11-02",
+   "turns": 54,
+   "input": 273931909,
+   "cached": 272618891,
+   "cacheWrites": 1311618,
+   "output": 512910,
+   "reasoning": 167479
+  },
+  {
+   "day": "2026-11-03",
+   "turns": 46,
+   "input": 222675229,
+   "cached": 220851588,
+   "cacheWrites": 1822093,
+   "output": 535290,
+   "reasoning": 164983
+  },
+  {
+   "day": "2026-11-04",
+   "turns": 221,
+   "input": 1398925014,
+   "cached": 1389513369,
+   "cacheWrites": 7790773,
+   "output": 3095453,
+   "reasoning": 935386
+  },
+  {
+   "day": "2026-11-05",
+   "turns": 162,
+   "input": 738492846,
+   "cached": 729888146,
+   "cacheWrites": 5480651,
+   "output": 2785798,
+   "reasoning": 959060
+  },
+  {
+   "day": "2026-11-06",
+   "turns": 147,
+   "input": 715191230,
+   "cached": 706696077,
+   "cacheWrites": 4247420,
+   "output": 2751723,
+   "reasoning": 763957
+  },
+  {
+   "day": "2026-11-07",
+   "turns": 45,
+   "input": 211293508,
+   "cached": 208978512,
+   "cacheWrites": 1592906,
+   "output": 1068249,
+   "reasoning": 334847
+  },
+  {
+   "day": "2026-11-08",
+   "turns": 33,
+   "input": 240218405,
+   "cached": 238637265,
+   "cacheWrites": 1212608,
+   "output": 632689,
+   "reasoning": 197447
+  },
+  {
+   "day": "2026-11-09",
+   "turns": 205,
+   "input": 1211765898,
+   "cached": 1199499922,
+   "cacheWrites": 7819539,
+   "output": 3508969,
+   "reasoning": 1198761
+  },
+  {
+   "day": "2026-11-10",
+   "turns": 84,
+   "input": 568654933,
+   "cached": 561421494,
+   "cacheWrites": 4218579,
+   "output": 1788783,
+   "reasoning": 806512
+  },
+  {
+   "day": "2026-11-11",
+   "turns": 43,
+   "input": 210453612,
+   "cached": 207583372,
+   "cacheWrites": 951370,
+   "output": 792680,
+   "reasoning": 417038
+  },
+  {
+   "day": "2026-11-12",
+   "turns": 187,
+   "input": 697185003,
+   "cached": 686510741,
+   "cacheWrites": 9347623,
+   "output": 3168360,
+   "reasoning": 968018
+  },
+  {
+   "day": "2026-11-13",
+   "turns": 113,
+   "input": 368009910,
+   "cached": 361578942,
+   "cacheWrites": 4229945,
+   "output": 1501280,
+   "reasoning": 671729
+  },
+  {
+   "day": "2026-11-14",
+   "turns": 75,
+   "input": 370205332,
+   "cached": 365353516,
+   "cacheWrites": 3084677,
+   "output": 1859211,
+   "reasoning": 949136
+  },
+  {
+   "day": "2026-11-15",
+   "turns": 176,
+   "input": 800148327,
+   "cached": 791270915,
+   "cacheWrites": 7528358,
+   "output": 3069510,
+   "reasoning": 1052775
+  },
+  {
+   "day": "2026-11-16",
+   "turns": 226,
+   "input": 1248743725,
+   "cached": 1235912785,
+   "cacheWrites": 11074479,
+   "output": 4130689,
+   "reasoning": 1348345
+  },
+  {
+   "day": "2026-11-17",
+   "turns": 128,
+   "input": 478018081,
+   "cached": 470719287,
+   "cacheWrites": 6973550,
+   "output": 1527762,
+   "reasoning": 369923
+  },
+  {
+   "day": "2026-11-18",
+   "turns": 60,
+   "input": 267900012,
+   "cached": 263627469,
+   "cacheWrites": 1566373,
+   "output": 1288696,
+   "reasoning": 614926
+  },
+  {
+   "day": "2026-11-19",
+   "turns": 94,
+   "input": 252178504,
+   "cached": 248271320,
+   "cacheWrites": 2497915,
+   "output": 1107223,
+   "reasoning": 415293
+  }
+ ]
+}
