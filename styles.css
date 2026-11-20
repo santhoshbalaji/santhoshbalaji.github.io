@@ -1118,3 +1118,9 @@ img { display: block; max-width: 100%; }
 }
 [data-theme="day"] .site-footer { padding-left: max(1.5rem, calc((100vw - 70rem) / 2)); padding-right: max(1.5rem, calc((100vw - 70rem) / 2)); }
 .career-trace-heading h2 { display: flex; align-items: center; gap: .55rem; margin: 0; color: var(--starlight); font: 600 1.125rem/1.2 var(--font-display); letter-spacing: -.01em; }
+
+/* Desktop: the header already has the pause control, so the stage keeps only Reset. */
+@media (min-width: 821px) { .stage-controls .stage-motion { display: none; } }
+.wordmark-role { white-space: nowrap; }
+@media (max-width: 1180px) { .site-header .wordmark-role { display: none; } }
+@media (max-width: 900px) { .project-header .wordmark-role { display: none; } }

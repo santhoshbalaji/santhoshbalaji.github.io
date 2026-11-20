@@ -9,7 +9,7 @@ const root = new URL("../", import.meta.url);
 process.chdir(root.pathname);
 await mkdir("assets/build", { recursive: true });
 await mkdir("work", { recursive: true });
-await sharp(Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630"><rect width="1200" height="630" fill="#000"/><ellipse cx="1030" cy="340" rx="300" ry="190" fill="none" stroke="#242c42"/><ellipse cx="1030" cy="340" rx="390" ry="250" fill="none" stroke="#151c2b"/><circle cx="940" cy="175" r="8" fill="#b8d94b"/><circle cx="1090" cy="511" r="7" fill="#8f78ff"/><text x="80" y="110" fill="#aab7cb" font-family="Helvetica,Arial,sans-serif" font-size="24">SANTHOSH BALAJI S</text><text x="76" y="275" fill="#f2f6ff" font-family="Helvetica,Arial,sans-serif" font-size="70" font-weight="600">I design and build</text><text x="76" y="360" fill="#b8c6ff" font-family="Helvetica,Arial,sans-serif" font-size="70" font-weight="600">software, end to end.</text><path d="M80 440H140" stroke="#b8c6ff" stroke-width="2"/><text x="80" y="492" fill="#aab7cb" font-family="Helvetica,Arial,sans-serif" font-size="24">Software developer · Product engineering · Chennai</text><text x="80" y="554" fill="#8c9ab0" font-family="Helvetica,Arial,sans-serif" font-size="22">santhoshbalaji.cloud</text></svg>`)).png().toFile("assets/social-card.png");
+await sharp(Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630"><rect width="1200" height="630" fill="#000"/><ellipse cx="1030" cy="340" rx="300" ry="190" fill="none" stroke="#242c42"/><ellipse cx="1030" cy="340" rx="390" ry="250" fill="none" stroke="#151c2b"/><circle cx="940" cy="175" r="8" fill="#b8d94b"/><circle cx="1090" cy="511" r="7" fill="#8f78ff"/><text x="80" y="110" fill="#aab7cb" font-family="Helvetica,Arial,sans-serif" font-size="24">SANTHOSH BALAJI S</text><text x="76" y="275" fill="#f2f6ff" font-family="Helvetica,Arial,sans-serif" font-size="70" font-weight="600">I design and build</text><text x="76" y="360" fill="#b8c6ff" font-family="Helvetica,Arial,sans-serif" font-size="70" font-weight="600">software, end to end.</text><path d="M80 440H140" stroke="#b8c6ff" stroke-width="2"/><text x="80" y="492" fill="#aab7cb" font-family="Helvetica,Arial,sans-serif" font-size="24">Software Developer and Product Builder · Chennai</text><text x="80" y="554" fill="#8c9ab0" font-family="Helvetica,Arial,sans-serif" font-size="22">santhoshbalaji.cloud</text></svg>`)).png().toFile("assets/social-card.png");
 const result = await build({
   entryPoints: { site: "script.js" }, outdir: "assets/build", bundle: true,
   splitting: true, format: "esm", minify: true, target: "es2022",
@@ -27,7 +27,7 @@ const cssPath = `assets/build/site-${createHash("sha256").update(css).digest("he
 await writeFile(cssPath, css.replaceAll('url(assets/', 'url(../../assets/').replaceAll('url("assets/', 'url("../../assets/'));
 
 const person = { "@context": "https://schema.org", "@type": "ProfilePage", url: "https://santhoshbalaji.cloud/", mainEntity: {
-  "@type": "Person", name: "Santhosh Balaji S", jobTitle: "Software Developer",
+  "@type": "Person", name: "Santhosh Balaji S", jobTitle: "Software Developer and Product Builder",
   url: "https://santhoshbalaji.cloud/", image: "https://santhoshbalaji.cloud/assets/profile/santhosh-balaji-288.webp",
   sameAs: ["https://x.com/SanthoshBala_S", "https://linkedin.com/in/santhoshbalajis", "https://github.com/santhoshbalaji", "https://www.youtube.com/@santhoshbala_s"],
 } };
@@ -43,7 +43,7 @@ html = html.replace(/<link data-site-css[^>]+>/, `<style data-site-css data-sour
   .replace(/<script data-site-js[^>]+><\/script>/, `<script data-site-js type="module" src="${entry}"></script>`);
 const metadata = `<meta property="og:image" content="https://santhoshbalaji.cloud/assets/social-card.png" />
     <meta property="og:image:width" content="1200" /><meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="Santhosh Balaji S — software developer building dependable products" />
+    <meta property="og:image:alt" content="Santhosh Balaji S — software developer and product builder" />
     <meta name="twitter:card" content="summary_large_image" />
     <script type="application/ld+json">${JSON.stringify(person)}</script>`;
 html = html.replace(/\s*<!-- generated metadata -->[\s\S]*?<!-- end generated metadata -->/, "");
@@ -54,7 +54,7 @@ await writeFile("index.html", html.replace(/[ \t]+$/gm, ""));
 const escape = (s) => s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll('"', "&quot;");
 
 // One header and one footer for every generated page. r is the path back to the site root.
-const WORDMARK = (r) => `<a class="wordmark" href="${r}index.html" aria-label="Santhosh Balaji S, home"><span class="wordmark-name"><b>Santhosh</b><span>Balaji</span><em>S</em></span><span class="wordmark-role"><i aria-hidden="true"></i>Software Developer</span></a>`;
+const WORDMARK = (r) => `<a class="wordmark" href="${r}index.html" aria-label="Santhosh Balaji S, home"><span class="wordmark-name"><b>Santhosh</b><span>Balaji</span><em>S</em></span><span class="wordmark-role"><i aria-hidden="true"></i>Software Developer and Product Builder</span></a>`;
 const HEADER = (r) => `<header class="project-header">${WORDMARK(r)}<nav aria-label="Primary navigation"><a href="${r}index.html#work">Work</a><a href="${r}work-with-me.html">Services</a><a href="${r}about.html">About</a><a href="${r}index.html#contact">Contact</a></nav></header>`;
 const FOOTER = (r, note = "") => `<footer class="site-footer"><p>© 2026 Santhosh Balaji S</p><p>Chennai, India</p><div class="footer-links"><a href="${r}index.html#work">Work</a><a href="${r}work-with-me.html">Services</a><a href="${r}about.html">About</a><a href="${r}privacy.html">Privacy</a></div>${note ? `<p class="trademark-note">${note}</p>` : ""}</footer>`;
 

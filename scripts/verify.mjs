@@ -7,7 +7,7 @@ const html = await read("index.html"), css = await read("styles.css"), js = awai
 const analytics = await read("analytics.js"), privacy = await read("privacy.html");
 const manifest = JSON.parse(await read("build-manifest.json"));
 const check = (condition, name) => { assert.ok(condition, name); console.log(`✓ ${name}`); };
-check(html.includes("<title>Santhosh Balaji S — Software Developer</title>"), "Developer identity retained");
+check(html.includes("<title>Santhosh Balaji S — Software Developer and Product Builder</title>"), "Developer identity retained");
 check(html.includes('data-theme="orbital"') && html.includes(manifest.css) && html.includes(manifest.entry), "Fingerprint build is used by the page");
 check(!html.includes('media="print"') && !html.includes('this.media='), "No async stylesheet/critical-style mismatch");
 check((html.match(/<!-- generated metadata -->/g)||[]).length === 1, "One generated metadata block");
