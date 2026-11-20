@@ -76,6 +76,17 @@ ${pg.sections.map((sec, i) => sec.wide ? `<section class="page-wide" aria-labell
 ${FOOTER("")}</body></html>`;
   await writeFile(`${pg.id}.html`, page);
 }
+// 404 page. GitHub Pages serves it at any depth, so every path is root-relative.
+await writeFile("404.html", `<!doctype html>
+<html lang="en" data-theme="day"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Page not found — Santhosh Balaji S</title><meta name="robots" content="noindex"><meta name="theme-color" content="#f4f6f8">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/${cssPath}"></head>
+<body class="project-page"><a class="skip-link" href="#main">Skip to content</a>
+${HEADER("/")}
+<main id="main" class="project-story" style="--active-accent:var(--signal-blue)">
+<div class="project-intro"><p class="section-label">Error 404</p><h1>This page doesn’t exist.</h1><p class="project-lead">The link may be old or mistyped. These will get you back on track.</p></div>
+<footer class="project-next"><p>Where to next?</p><a class="mission-link" href="/index.html#work">View my work →</a><a href="/work-with-me.html">Services</a><a href="/about.html">About</a><a href="/index.html">Home page</a></footer></main>
+${FOOTER("/")}</body></html>`);
 for (const p of projects) {
   const page = `<!doctype html>
 <html lang="en" data-theme="day"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">

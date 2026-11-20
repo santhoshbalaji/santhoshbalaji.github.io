@@ -1110,3 +1110,11 @@ img { display: block; max-width: 100%; }
 @media (max-width: 580px) { .project-header nav { flex-wrap: nowrap; gap: .7rem; } .project-header { gap: .5rem; } }
 @media (max-width: 380px) { .project-header { flex-wrap: wrap; } .project-header nav { flex-wrap: wrap; justify-content: flex-start; } }
 .universe-render:focus-visible { outline: 2px solid var(--signal-blue); outline-offset: -4px; }
+
+/* One left edge: header, hero, sections and footer share a column. */
+@media (min-width: 961px) {
+  .site-header { padding-left: max(6vw, calc((100vw - 78rem) / 2)); padding-right: max(6vw, calc((100vw - 78rem) / 2)); }
+  .hero { padding-left: calc(max(6vw, (100vw - 78rem) / 2) - (100vw - var(--page-width)) / 2); }
+}
+[data-theme="day"] .site-footer { padding-left: max(1.5rem, calc((100vw - 70rem) / 2)); padding-right: max(1.5rem, calc((100vw - 70rem) / 2)); }
+.career-trace-heading h2 { display: flex; align-items: center; gap: .55rem; margin: 0; color: var(--starlight); font: 600 1.125rem/1.2 var(--font-display); letter-spacing: -.01em; }

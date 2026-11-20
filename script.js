@@ -96,11 +96,11 @@ function selectCareer(career, { focus = false } = {}) {
 careerTabs.forEach((tab, index) => {
   tab.addEventListener("click", () => selectCareer(tab.dataset.career));
   tab.addEventListener("keydown", (event) => {
-    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+    if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"].includes(event.key)) return;
     event.preventDefault();
     let nextIndex = index;
-    if (event.key === "ArrowRight") nextIndex = (index + 1) % careerTabs.length;
-    if (event.key === "ArrowLeft") nextIndex = (index - 1 + careerTabs.length) % careerTabs.length;
+    if (event.key === "ArrowRight" || event.key === "ArrowDown") nextIndex = (index + 1) % careerTabs.length;
+    if (event.key === "ArrowLeft" || event.key === "ArrowUp") nextIndex = (index - 1 + careerTabs.length) % careerTabs.length;
     if (event.key === "Home") nextIndex = 0;
     if (event.key === "End") nextIndex = careerTabs.length - 1;
     selectCareer(careerTabs[nextIndex].dataset.career, { focus: true });
@@ -166,6 +166,8 @@ function automaticUniverseFallbackReason() {
   const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
   if (connection?.saveData) return "data-saver";
   if (!supportsInteractiveWebGL()) return "webgl-unavailable";
+  // Phones get the still picture first; the 3D scene is one tap away.
+  if (window.matchMedia("(max-width: 820px)").matches) return "small-screen";
   return "";
 }
 

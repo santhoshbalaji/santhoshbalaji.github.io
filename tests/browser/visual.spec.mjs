@@ -40,8 +40,9 @@ test("capture project, experience, contact and mobile layouts", async ({ page })
   await page.locator("#contact").screenshot({path:"test-results/contact.png"});
   await page.setViewportSize({width:390,height:844});
   await page.goto("/");
-  await expect(page.locator("#gravity-stage")).toHaveAttribute("data-three-state", "ready", { timeout: 30000 });
   await page.screenshot({path:"test-results/phone-hero.png"});
+  await page.locator("#universe-activate").click();
+  await expect(page.locator("#gravity-stage")).toHaveAttribute("data-three-state", "ready", { timeout: 30000 });
   await page.locator(".stage-motion").scrollIntoViewIfNeeded();
   await page.locator(".stage-motion").click();
   await page.screenshot({path:"test-results/phone-orbits.png"});

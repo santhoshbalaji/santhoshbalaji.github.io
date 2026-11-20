@@ -75,6 +75,9 @@ for (const width of [320, 390, 768]) test(`mobile controls, menu dismissal and n
   await page.keyboard.press("Escape");
   await expect(page.locator("#mobile-nav")).toBeHidden();
   await expect(page.locator("#menu-button")).toBeFocused();
+  // Phones show the still picture first; the 3D scene loads on request.
+  await expect(page.locator("#gravity-stage")).toHaveAttribute("data-three-state", "fallback");
+  await page.locator("#universe-activate").click();
   await expect(page.locator("#gravity-stage")).toHaveAttribute("data-three-state", "ready", { timeout: 30000 });
   await page.locator(".stage-motion").scrollIntoViewIfNeeded();
   await page.locator(".stage-motion").click();
