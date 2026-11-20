@@ -18,7 +18,7 @@ check(!/<article[^>]+role="tabpanel"/.test(html), "Tab panels use appropriate el
 check(html.includes('data-motion-toggle') && html.includes('class="stage-motion"'), "Desktop and mobile motion controls exist");
 check(html.includes("contact@santhoshbalaji.cloud") && html.includes("mailto:contact@santhoshbalaji.cloud"), "Contact address retained");
 for (const url of ["https://x.com/SanthoshBala_S", "https://linkedin.com/in/santhoshbalajis", "https://github.com/santhoshbalaji"]) check(html.includes(url), `Social destination ${url}`);
-check(html.includes("Zoho Corporation") && html.includes("Tamil Nadu Forest Department") && html.includes("no endorsement is implied"), "Factual career identity and trademark attribution retained");
+check(html.includes("Zoho Corporation") && html.includes("state forest department") && !html.includes("Tamil Nadu Forest Department") && html.includes("no endorsement is implied"), "Career identity retained, forest department not named");
 check(!html.includes("Résumé") && !html.includes(".pdf") && !html.includes("Political Science"), "Previously removed profile content stays removed");
 for (const p of projects) {
   check(html.includes(`work/${p.id}.html`), `${p.name} has a useful destination`);

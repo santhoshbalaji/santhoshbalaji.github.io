@@ -29,7 +29,7 @@ await writeFile(cssPath, css.replaceAll('url(assets/', 'url(../../assets/').repl
 const person = { "@context": "https://schema.org", "@type": "ProfilePage", url: "https://santhoshbalaji.cloud/", mainEntity: {
   "@type": "Person", name: "Santhosh Balaji S", jobTitle: "Software Developer",
   url: "https://santhoshbalaji.cloud/", image: "https://santhoshbalaji.cloud/assets/profile/santhosh-balaji-288.webp",
-  sameAs: ["https://x.com/SanthoshBala_S", "https://linkedin.com/in/santhoshbalajis", "https://github.com/santhoshbalaji"],
+  sameAs: ["https://x.com/SanthoshBala_S", "https://linkedin.com/in/santhoshbalajis", "https://github.com/santhoshbalaji", "https://www.youtube.com/@santhoshbala_s"],
 } };
 let html = await readFile("index.html", "utf8");
 const desktopPoster = await sharp("assets/universe-preview.webp").metadata();
@@ -51,30 +51,29 @@ html = html.replace("</head>", `    <!-- generated metadata -->\n    ${metadata}
 // Keep repeated builds deterministic.
 html = html.replace(/(<noscript><style>\.gravity-stage[\s\S]*?<\/noscript>)([\s\S]*?)\1/g, "$2$1");
 await writeFile("index.html", html.replace(/[ \t]+$/gm, ""));
-let privacy = await readFile("privacy.html", "utf8");
-privacy = privacy.replace(/<link rel="stylesheet" href="(?:theme|styles)\.min\.css[^>]+>\s*/g, "");
-privacy = privacy.replace(/<link data-site-css[^>]+>\s*/g, "");
-privacy = privacy.replace("</head>", `<link data-site-css rel="stylesheet" href="${cssPath}" />\n  </head>`);
-await writeFile("privacy.html", privacy);
-
 const escape = (s) => s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll('"', "&quot;");
 
-// Reading pages: About and Work with me. Same day theme and stylesheet as the project notes.
+// One header and one footer for every generated page. r is the path back to the site root.
+const WORDMARK = (r) => `<a class="wordmark" href="${r}index.html" aria-label="Santhosh Balaji S, home"><span class="wordmark-name"><b>Santhosh</b><span>Balaji</span><em>S</em></span><span class="wordmark-role"><i aria-hidden="true"></i>Software Developer</span></a>`;
+const HEADER = (r) => `<header class="project-header">${WORDMARK(r)}<nav aria-label="Primary navigation"><a href="${r}index.html#work">Work</a><a href="${r}work-with-me.html">Services</a><a href="${r}about.html">About</a><a href="${r}index.html#contact">Contact</a></nav></header>`;
+const FOOTER = (r, note = "") => `<footer class="site-footer"><p>© 2026 Santhosh Balaji S</p><p>Chennai, India</p><div class="footer-links"><a href="${r}index.html#work">Work</a><a href="${r}work-with-me.html">Services</a><a href="${r}about.html">About</a><a href="${r}privacy.html">Privacy</a></div>${note ? `<p class="trademark-note">${note}</p>` : ""}</footer>`;
+
+// Reading pages: About, Work with me and Privacy. Same day theme and stylesheet as the project notes.
 for (const pg of pages) {
   const page = `<!doctype html>
 <html lang="en" data-theme="day"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${pg.label} — Santhosh Balaji S</title><meta name="description" content="${escape(pg.description)}">
 <meta name="referrer" content="strict-origin-when-cross-origin"><meta name="theme-color" content="#f4f6f8">
 <link rel="canonical" href="https://santhoshbalaji.cloud/${pg.id}.html"><link rel="icon" href="favicon.svg" type="image/svg+xml">
-<meta property="og:title" content="${pg.label} — Santhosh Balaji S"><meta property="og:description" content="${escape(pg.description)}"><meta property="og:type" content="website"><meta property="og:image" content="https://santhoshbalaji.cloud/assets/social-card.png"><meta name="twitter:card" content="summary_large_image">
+<meta property="og:url" content="https://santhoshbalaji.cloud/${pg.id}.html"><meta property="og:title" content="${pg.label} — Santhosh Balaji S"><meta property="og:description" content="${escape(pg.description)}"><meta property="og:type" content="website"><meta property="og:image" content="https://santhoshbalaji.cloud/assets/social-card.png"><meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="${cssPath}"><script src="analytics.js?v=1" defer></script></head>
 <body class="project-page"><a class="skip-link" href="#main">Skip to content</a>
-<header class="project-header"><a class="wordmark" href="index.html" aria-label="Santhosh Balaji S, home"><span class="wordmark-name"><b>Santhosh</b><span>Balaji</span><em>S</em></span><span class="wordmark-role"><i aria-hidden="true"></i>Software Developer</span></a><nav aria-label="Page links"><a href="index.html">← Home</a><a href="index.html#contact">Contact ↗</a></nav></header>
+${HEADER("")}
 <main id="main" class="project-story" style="--active-accent:var(--signal-blue)">
 <div class="project-intro"><p class="section-label">${pg.label}</p><h1>${pg.title}</h1><p class="project-lead">${pg.lead}</p></div>
 ${pg.sections.map((sec, i) => sec.wide ? `<section class="page-wide" aria-labelledby="s${i}"><p class="section-label">${sec.label}</p><h2 id="s${i}">${sec.title}</h2>${sec.body}</section>` : `<section class="project-context" aria-labelledby="s${i}"><div><p class="section-label">${sec.label}</p><h2 id="s${i}">${sec.title}</h2></div><div>${sec.body}</div></section>`).join("\n")}
 <footer class="project-next"><p>${pg.next[0]}</p><a class="mission-link" href="${pg.next[2]}">${pg.next[1]} →</a><a href="index.html">Back to the home page</a></footer></main>
-<footer class="site-footer"><p>© 2026 Santhosh Balaji S</p><a href="privacy.html">Privacy</a></footer></body></html>`;
+${FOOTER("")}</body></html>`;
   await writeFile(`${pg.id}.html`, page);
 }
 for (const p of projects) {
@@ -83,22 +82,22 @@ for (const p of projects) {
 <title>${p.name} — Product notes by Santhosh Balaji S</title><meta name="description" content="${escape(p.lead)}">
 <meta name="referrer" content="strict-origin-when-cross-origin"><meta name="theme-color" content="#f4f6f8">
 <link rel="canonical" href="https://santhoshbalaji.cloud/work/${p.id}.html"><link rel="icon" href="../favicon.svg" type="image/svg+xml">
-<meta property="og:title" content="${p.name} — Product notes"><meta property="og:description" content="${escape(p.lead)}"><meta property="og:type" content="article"><meta property="og:image" content="https://santhoshbalaji.cloud/assets/social-card.png"><meta name="twitter:card" content="summary_large_image">
+<meta property="og:url" content="https://santhoshbalaji.cloud/work/${p.id}.html"><meta property="og:title" content="${p.name} — Product notes"><meta property="og:description" content="${escape(p.lead)}"><meta property="og:type" content="article"><meta property="og:image" content="https://santhoshbalaji.cloud/assets/social-card.png"><meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="../${cssPath}"><script src="../analytics.js?v=1" defer></script></head>
 <body class="project-page"><a class="skip-link" href="#main">Skip to content</a>
-<header class="project-header"><a class="wordmark" href="../index.html" aria-label="Santhosh Balaji S, home"><span class="wordmark-name"><b>Santhosh</b><span>Balaji</span><em>S</em></span><span class="wordmark-role"><i aria-hidden="true"></i>Software Developer</span></a><nav aria-label="Page links"><a href="../index.html#${p.id}">← All projects</a><a href="../index.html#contact">Contact ↗</a></nav></header>
+${HEADER("../")}
 <main id="main" class="project-story" style="--active-accent:var(--${p.id})">
-<div class="project-intro"><img src="../assets/logos/${p.id}.svg" width="64" height="64" alt=""><p class="section-label">${p.name} / ${p.category}</p><h1>${p.title}</h1><p class="project-lead">${p.lead}</p><p class="project-availability">${p.status}</p>${p.url && !p.unavailable ? `<a class="primary-action" href="${p.url}" target="_blank" rel="noreferrer">${p.next} ↗</a>` : ""}</div>
+<div class="project-intro"><img src="../assets/logos/${p.id}.svg" width="64" height="64" alt=""><p class="section-label">${p.name} / ${p.category}</p><h1>${p.title}</h1><p class="project-lead">${p.lead}</p><p class="project-availability">${p.status}</p>${p.url && !p.unavailable ? `<a class="primary-action" href="${p.url}" target="_blank" rel="noreferrer">${p.next} ↗</a>` : p.demo ? `<a class="primary-action" href="mailto:contact@santhoshbalaji.cloud?subject=${encodeURIComponent(p.name + " demo")}">Ask for a demo →</a>` : ""}</div>
 ${p.image ? `<figure class="project-preview"><img src="../${p.image}" alt="${escape(p.imageAlt)}" width="1600" height="640" loading="lazy" decoding="async"><figcaption>${p.imageCaption}</figcaption></figure>` : ""}
-${p.story ? `<section class="project-context" aria-labelledby="story"><div><p class="section-label">The story</p><h2 id="story">Why I built it.</h2></div><p>${p.story}</p></section>\n` : ""}<section class="project-context" aria-labelledby="problem"><div><p class="section-label">The problem</p><h2 id="problem">${p.audience}</h2></div><p>${p.problem}</p></section>
-<section aria-labelledby="workflow"><p class="section-label">How it works</p><h2 id="workflow">One connected workflow.</h2><ol class="project-flow">${p.steps.map(([title, text], i) => `<li><b>0${i+1}</b><strong>${title}</strong><span>${text}</span></li>`).join("")}</ol><p class="diagram-note">Engineering workflow · a simplified view of the product, not a screen mockup.</p></section>
-<section class="project-context" aria-labelledby="engineering"><div><p class="section-label">Engineering decisions</p><h2 id="engineering">What matters beneath the interface.</h2></div><div><p>${p.decision}</p><p>${p.boundary}</p></div></section>
-<section class="project-context" aria-labelledby="ownership"><div><p class="section-label">My contribution</p><h2 id="ownership">From product to implementation.</h2></div><div><p>${p.ownership}</p><ul class="project-facts">${p.facts.map(f=>`<li>${f}</li>`).join("")}</ul><p class="stack-list">${p.stack.join(" · ")}</p></div></section>
-<footer class="project-next"><p>Want to discuss a similar challenge?</p><a class="mission-link" href="mailto:contact@santhoshbalaji.cloud">Let’s talk →</a><a href="../index.html#${p.id}">Back to the portfolio</a></footer></main>
-<footer class="site-footer"><p>© 2026 Santhosh Balaji S</p><a href="../privacy.html">Privacy</a><p>Independent product work. No organizational endorsement implied.</p></footer></body></html>`;
+${p.story ? `<section class="project-context" aria-labelledby="story"><div><p class="section-label">The story</p><h2 id="story">Why I built it.</h2></div><p>${p.story}</p></section>\n` : ""}<section class="project-context" aria-labelledby="problem"><div><p class="section-label">The problem</p><h2 id="problem">What it solves.</h2></div><div><p>${p.problem}</p><p><strong>Who it’s for:</strong> ${p.audience}</p></div></section>
+<section aria-labelledby="workflow"><p class="section-label">Workflow</p><h2 id="workflow">How ${p.name} works.</h2><ol class="project-flow">${p.steps.map(([title, text], i) => `<li><b>0${i+1}</b><strong>${title}</strong><span>${text}</span></li>`).join("")}</ol></section>
+<section class="project-context" aria-labelledby="engineering"><div><p class="section-label">Engineering</p><h2 id="engineering">Decisions and limits.</h2></div><div><p>${p.decision}</p><p>${p.boundary}</p></div></section>
+<section class="project-context" aria-labelledby="ownership"><div><p class="section-label">My role</p><h2 id="ownership">What I built.</h2></div><div><p>${p.ownership}</p><ul class="project-facts">${p.facts.map(f=>`<li>${f}</li>`).join("")}</ul><p class="stack-list">${p.stack.join(" · ")}</p></div></section>
+<footer class="project-next"><p>Want to discuss a similar challenge?</p><a class="mission-link" href="mailto:contact@santhoshbalaji.cloud">Let’s talk →</a><a href="../index.html#work">Back to all work</a></footer></main>
+${FOOTER("../", "Independent product work. No organisational endorsement implied.")}</body></html>`;
   await writeFile(`work/${p.id}.html`, page);
 }
-await writeFile("sitemap.xml", `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${["", "privacy.html", ...projects.map(p=>`work/${p.id}.html`)].map(path=>`  <url><loc>https://santhoshbalaji.cloud/${path}</loc></url>`).join("\n")}\n</urlset>\n`);
+await writeFile("sitemap.xml", `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${["", "about.html", "work-with-me.html", "usage.html", "privacy.html", ...projects.map(p=>`work/${p.id}.html`)].map(path=>`  <url><loc>https://santhoshbalaji.cloud/${path}</loc></url>`).join("\n")}\n</urlset>\n`);
 await writeFile("robots.txt", "User-agent: *\nAllow: /\nSitemap: https://santhoshbalaji.cloud/sitemap.xml\n");
 await writeFile("build-manifest.json", JSON.stringify({ entry, css: cssPath, outputs: Object.keys(result.metafile.outputs) }, null, 2) + "\n");
 console.log(`Built ${entry}, ${cssPath} and ${projects.length} project pages.`);
@@ -112,27 +111,28 @@ if (existsSync("usage.json")) {
   const date = (d) => new Date(d + "T00:00:00Z").toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
   const fresh = (x) => Math.max(0, x.input - x.cached);
   const max = Math.max(...u.days.map((d) => d.output));
+  const shown = (o) => Object.entries(o).filter(([, x]) => x.turns >= 5).sort((a, b) => b[1].input - a[1].input);
   const row = (name, x) => `<tr><th scope="row">${name}</th><td>${x.turns.toLocaleString("en-GB")}</td><td>${short(x.input)}</td><td>${short(fresh(x))}</td><td>${short(x.output)}</td></tr>`;
-  const head = `<thead><tr><th scope="col"></th><th scope="col">Turns</th><th scope="col">Tokens processed</th><th scope="col">New input</th><th scope="col">Output</th></tr></thead>`;
-  const provRows = Object.entries(u.providers).sort((a, b) => b[1].input - a[1].input).map(([k, x]) => row(k, x)).join("");
-  const modelRows = Object.entries(u.models).sort((a, b) => b[1].input - a[1].input).map(([k, x]) => row(k, x)).join("");
+  const head = (first) => `<thead><tr><th scope="col">${first}</th><th scope="col">Turns</th><th scope="col">Tokens processed</th><th scope="col">New input</th><th scope="col">Output</th></tr></thead>`;
+  const provRows = shown(u.providers).map(([k, x]) => row(k, x)).join("");
+  const modelRows = shown(u.models).map(([k, x]) => row(k, x)).join("");
   const bars = u.days.map((d) => `<li><span>${date(d.day).replace(/ \d{4}$/, "")}</span><i style="width:${Math.max(1, (d.output / max) * 100).toFixed(1)}%"></i><b>${short(d.output)}</b></li>`).join("");
   const page = `<!doctype html>
 <html lang="en" data-theme="day"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AI usage — Santhosh Balaji S</title><meta name="description" content="How many tokens my AI coding agents used, by provider, model and day, from my own records.">
 <meta name="referrer" content="strict-origin-when-cross-origin"><meta name="theme-color" content="#f4f6f8">
 <link rel="canonical" href="https://santhoshbalaji.cloud/usage.html"><link rel="icon" href="favicon.svg" type="image/svg+xml">
-<meta property="og:title" content="AI usage — Santhosh Balaji S"><meta property="og:type" content="website"><meta property="og:image" content="https://santhoshbalaji.cloud/assets/social-card.png"><meta name="twitter:card" content="summary_large_image">
+<meta property="og:url" content="https://santhoshbalaji.cloud/usage.html"><meta property="og:title" content="AI usage — Santhosh Balaji S"><meta property="og:description" content="How I use AI coding agents, with token counts by provider, model and day from my own records."><meta property="og:type" content="website"><meta property="og:image" content="https://santhoshbalaji.cloud/assets/social-card.png"><meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="${cssPath}"><script src="analytics.js?v=1" defer></script></head>
 <body class="project-page"><a class="skip-link" href="#main">Skip to content</a>
-<header class="project-header"><a class="wordmark" href="index.html" aria-label="Santhosh Balaji S, home"><span class="wordmark-name"><b>Santhosh</b><span>Balaji</span><em>S</em></span><span class="wordmark-role"><i aria-hidden="true"></i>Software Developer</span></a><nav aria-label="Page links"><a href="about.html">← About</a><a href="index.html#contact">Contact ↗</a></nav></header>
+${HEADER("")}
 <main id="main" class="project-story" style="--active-accent:var(--signal-blue)">
-<div class="project-intro"><p class="section-label">AI usage</p><h1>${n(u.total.output)} tokens written by agents.</h1><p class="project-lead">From ${date(u.from)} to ${date(u.to)}, across ${u.threads.toLocaleString("en-GB")} agent threads and ${u.total.turns.toLocaleString("en-GB")} turns. These are my own records, read from the tool I run the agents in.</p></div>
+<div class="project-intro"><p class="section-label">AI usage</p><h1>How I use coding agents, in numbers.</h1><p class="project-lead">From ${date(u.from)} to ${date(u.to)} I ran ${u.threads.toLocaleString("en-GB")} agent threads and ${u.total.turns.toLocaleString("en-GB")} turns on my own projects. The agents wrote ${n(u.total.output)} tokens. I made the architecture decisions, reviewed the code and decided what shipped. These are my own records, read from the tool I run the agents in.</p></div>
 <section class="project-context" aria-labelledby="u1"><div><p class="section-label">Totals</p><h2 id="u1">What the numbers mean.</h2></div><div><ul class="usage-stats"><li><b>${short(u.total.output)}</b><span>Output: what the agents wrote</span></li><li><b>${short(fresh(u.total))}</b><span>New input: what they read for the first time</span></li><li><b>${short(u.total.input)}</b><span>Processed in total, mostly cached re-reads</span></li></ul><p>An agent re-reads its whole conversation on every turn. Those re-reads are cached and billed at a small fraction of the normal rate, which is why the processed total is so much larger than the other two.</p></div></section>
 <section aria-labelledby="u2"><p class="section-label">By day</p><h2 id="u2">Output tokens per day.</h2><ol class="usage-days">${bars}</ol></section>
-<section aria-labelledby="u3"><p class="section-label">By provider</p><h2 id="u3">Who did the work.</h2><div class="usage-table"><table>${head}<tbody>${provRows}</tbody></table></div></section>
-<section aria-labelledby="u4"><p class="section-label">By model</p><h2 id="u4">Where the model was recorded.</h2><div class="usage-table"><table>${head}<tbody>${modelRows}</tbody></table></div><p class="diagram-note">The model name was not recorded for every turn, so this table covers fewer turns than the provider table. Days are in UTC. Updated ${date(u.generatedAt)}.</p></section>
+<section aria-labelledby="u3"><p class="section-label">By provider</p><h2 id="u3">Usage by provider.</h2><div class="usage-table" role="region" aria-labelledby="u3" tabindex="0"><table>${head("Provider")}<tbody>${provRows}</tbody></table></div></section>
+<section aria-labelledby="u4"><p class="section-label">By model</p><h2 id="u4">Usage by model.</h2><div class="usage-table" role="region" aria-labelledby="u4" tabindex="0"><table>${head("Model")}<tbody>${modelRows}</tbody></table></div><p class="diagram-note">The model name was not recorded for every turn, so this table covers fewer turns than the provider table. Rows with fewer than five turns are left out of both tables. Days are in UTC. Updated ${date(u.generatedAt)}.</p></section>
 <footer class="project-next"><p>Want this way of working on your project?</p><a class="mission-link" href="work-with-me.html">Work with me →</a><a href="about.html">Back to About</a></footer></main>
-<footer class="site-footer"><p>© 2026 Santhosh Balaji S</p><a href="privacy.html">Privacy</a></footer></body></html>`;
+${FOOTER("")}</body></html>`;
   await writeFile("usage.html", page);
 }

@@ -21,7 +21,7 @@ export const projects = [
     id: "atlas", name: "Atlas", category: "AI media",
     image: "assets/projects/atlas-site.webp",
     imageAlt: "The Atlas project site: video production, thoughtfully connected",
-    imageCaption: "The Atlas project site, captured on 19 November 2026.",
+    imageCaption: "The Atlas project page.",
     title: "An inspectable path from research to video.",
     lead: "Research, narration, media planning and rendering as separate, recoverable stages rather than one opaque generation step.",
     audience: "Creators working with research-led, narrated video.",
@@ -32,7 +32,7 @@ export const projects = [
     stack: ["Angular", "Go", "Python", "PostgreSQL", "MinIO", "FFmpeg"],
     steps: [["Research & write", "Build the narration and segment it into a media plan."], ["Plan & produce", "Source or construct visuals and generate clip-level narration."], ["Review & render", "Inspect the storyboard, assemble with FFmpeg and optionally publish."]],
     facts: ["Versioned declarative visual-rendering contracts", "Per-project script, storyboard and media storage", "Separate narration, rendering and publishing stages"],
-    url: "https://atlas.santhoshbalaji.cloud/", status: "Public product site", next: "Visit Atlas",
+    demo: true, status: "Private project. Demo on request.",
   },
   {
     id: "nammatn", name: "NammaTN", category: "Civic technology",
