@@ -1124,3 +1124,14 @@ img { display: block; max-width: 100%; }
 .wordmark-role { white-space: nowrap; }
 @media (max-width: 1180px) { .site-header .wordmark-role { display: none; } }
 @media (max-width: 900px) { .project-header .wordmark-role { display: none; } }
+
+/* Product panels: text on top, the feature overview across the full width below. */
+.mission-shot a { display: block; }
+.mission-shot img { width: 100%; max-height: none; }
+@media (min-width: 961px) {
+  .mission-panel { grid-template-columns: minmax(0,.8fr) minmax(0,1.2fr); grid-template-rows: auto auto auto; }
+  .mission-panel h3 { grid-column: 1; grid-row: 1; }
+  .mission-summary { grid-column: 2; grid-row: 1; max-width: 38rem; padding-top: 0; }
+  .mission-panel .project-flow { grid-column: 1 / -1; grid-row: 2; margin-top: 1.6rem; }
+  .mission-shot { grid-column: 1 / -1; grid-row: 3; margin-top: 1.8rem; }
+}
