@@ -37,9 +37,8 @@ on GitHub Pages; adding one would not make these protections live.
 
 1. `npm ci && npm run build && npm test && npm run test:browser`.
 2. Review desktop/mobile screenshots in `test-results/`, including the orbital cycle.
-3. Run `npm run test:links` and check the public landing pages. Atlas was reverified
-   with HTTP 200 and a rendered landing page on 5 September 2026; its visit links
-   are restored. Recheck availability at release time.
+3. Run `npm run test:links` and check the public landing pages. Atlas has no public
+   site; its page offers a demo on request.
 4. Commit the fingerprinted build and generated project pages with the source.
 5. After explicit release approval, push/deploy; confirm the production HTML uses
    the same entry/CSS fingerprint as `build-manifest.json`.

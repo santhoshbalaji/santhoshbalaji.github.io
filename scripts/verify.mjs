@@ -7,7 +7,7 @@ const html = await read("index.html"), css = await read("styles.css"), js = awai
 const analytics = await read("analytics.js"), privacy = await read("privacy.html");
 const manifest = JSON.parse(await read("build-manifest.json"));
 const check = (condition, name) => { assert.ok(condition, name); console.log(`✓ ${name}`); };
-check(html.includes("<title>Santhosh Balaji S — Software Developer</title>"), "Developer identity retained");
+check(html.includes("<title>Santhosh Balaji S — Software Developer and Product Builder</title>"), "Developer identity retained");
 check(html.includes('data-theme="orbital"') && html.includes(manifest.css) && html.includes(manifest.entry), "Fingerprint build is used by the page");
 check(!html.includes('media="print"') && !html.includes('this.media='), "No async stylesheet/critical-style mismatch");
 check((html.match(/<!-- generated metadata -->/g)||[]).length === 1, "One generated metadata block");
@@ -18,7 +18,7 @@ check(!/<article[^>]+role="tabpanel"/.test(html), "Tab panels use appropriate el
 check(html.includes('data-motion-toggle') && html.includes('class="stage-motion"'), "Desktop and mobile motion controls exist");
 check(html.includes("contact@santhoshbalaji.cloud") && html.includes("mailto:contact@santhoshbalaji.cloud"), "Contact address retained");
 for (const url of ["https://x.com/SanthoshBala_S", "https://linkedin.com/in/santhoshbalajis", "https://github.com/santhoshbalaji"]) check(html.includes(url), `Social destination ${url}`);
-check(html.includes("Zoho Corporation") && html.includes("Tamil Nadu Forest Department") && html.includes("no endorsement is implied"), "Factual career identity and trademark attribution retained");
+check(html.includes("Zoho Corporation") && html.includes("state forest department") && !html.includes("Tamil Nadu Forest Department") && html.includes("no endorsement is implied"), "Career identity retained, forest department not named");
 check(!html.includes("Résumé") && !html.includes(".pdf") && !html.includes("Political Science"), "Previously removed profile content stays removed");
 for (const p of projects) {
   check(html.includes(`work/${p.id}.html`), `${p.name} has a useful destination`);

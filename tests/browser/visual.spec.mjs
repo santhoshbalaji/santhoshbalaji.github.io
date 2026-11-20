@@ -4,7 +4,7 @@ test("full orbital cycle retains product identity and coherent depth states", as
   test.setTimeout(110000);
   await page.goto("/");
   await expect(page.locator("#gravity-stage")).toHaveAttribute("data-three-state", "ready", { timeout: 30000 });
-  const observed = Object.fromEntries(["jurisfield","atlas","nammatn","mapsmith"].map(key=>[key,new Set()]));
+  const observed = Object.fromEntries(["jurisfield","oriv","nammatn","mapsmith"].map(key=>[key,new Set()]));
   for (let second = 0; second < 72; second += 4) {
     const states = await page.locator("[data-orbit-planet]").evaluateAll(nodes=>nodes.map(n=>({key:n.dataset.orbitPlanet, depth:n.dataset.depthState, logo:n.dataset.logoDepthState, hidden:n.getAttribute("aria-hidden"), bounds:n.getBoundingClientRect().toJSON()})));
     for (const s of states) {
@@ -32,7 +32,7 @@ test("capture project, experience, contact and mobile layouts", async ({ page })
   await expect(page.locator("#gravity-stage")).toHaveAttribute("data-three-state", "ready", { timeout: 30000 });
   await page.locator("#motion-control").click();
   await page.screenshot({path:"test-results/desktop-hero.png"});
-  for (const product of ["jurisfield","atlas","nammatn","mapsmith"]) {
+  for (const product of ["jurisfield","oriv","nammatn","mapsmith"]) {
     await page.locator(`#tab-${product}`).click();
     await page.locator("#mission-explorer").screenshot({path:`test-results/product-${product}.png`});
   }
@@ -40,8 +40,9 @@ test("capture project, experience, contact and mobile layouts", async ({ page })
   await page.locator("#contact").screenshot({path:"test-results/contact.png"});
   await page.setViewportSize({width:390,height:844});
   await page.goto("/");
-  await expect(page.locator("#gravity-stage")).toHaveAttribute("data-three-state", "ready", { timeout: 30000 });
   await page.screenshot({path:"test-results/phone-hero.png"});
+  await page.locator("#universe-activate").click();
+  await expect(page.locator("#gravity-stage")).toHaveAttribute("data-three-state", "ready", { timeout: 30000 });
   await page.locator(".stage-motion").scrollIntoViewIfNeeded();
   await page.locator(".stage-motion").click();
   await page.screenshot({path:"test-results/phone-orbits.png"});
