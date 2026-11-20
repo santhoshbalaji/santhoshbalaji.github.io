@@ -1124,3 +1124,21 @@ img { display: block; max-width: 100%; }
 .wordmark-role { white-space: nowrap; }
 @media (max-width: 1180px) { .site-header .wordmark-role { display: none; } }
 @media (max-width: 900px) { .project-header .wordmark-role { display: none; } }
+
+/* Enquiry form on the Services page. */
+.enquiry { display: grid; grid-template-columns: minmax(0,1.3fr) minmax(0,.7fr); gap: 3.5rem; margin-top: 2rem; }
+.enquiry-form { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem 1.25rem; }
+.enquiry-row { margin: 0; display: grid; gap: .4rem; }
+.enquiry-row.full { grid-column: 1 / -1; }
+.enquiry-row label { font-size: .875rem; font-weight: 600; color: var(--starlight); }
+.enquiry-row label span { font-weight: 400; color: var(--dust); }
+.enquiry-row :is(input,textarea) { width: 100%; padding: .75rem .85rem; border: 1px solid var(--orbit-line-strong); border-radius: .5rem; background: #fff; color: var(--starlight); font: inherit; font-size: 1rem; }
+.enquiry-row textarea { resize: vertical; min-height: 8rem; }
+.enquiry-row :is(input,textarea):focus-visible { outline: 2px solid var(--signal-blue); outline-offset: 1px; }
+.enquiry-row button { justify-self: start; cursor: pointer; border: 0; }
+.enquiry-row button:disabled { opacity: .6; cursor: progress; }
+.enquiry-trap { position: absolute; left: -200vw; width: 1px; height: 1px; overflow: hidden; }
+.enquiry-status { font-size: .9375rem; line-height: 1.5; color: var(--moonlight); }
+.enquiry-status[data-state="error"] { color: #a4262c; }
+.enquiry-aside p { margin: 0 0 1.25rem; color: var(--moonlight); line-height: 1.7; }
+@media (max-width: 860px) { .enquiry { grid-template-columns: 1fr; gap: 2rem; } .enquiry-form { grid-template-columns: 1fr; } }

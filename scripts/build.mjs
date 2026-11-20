@@ -66,7 +66,7 @@ for (const pg of pages) {
 <meta name="referrer" content="strict-origin-when-cross-origin"><meta name="theme-color" content="#f4f6f8">
 <link rel="canonical" href="https://santhoshbalaji.cloud/${pg.id}.html"><link rel="icon" href="favicon.svg" type="image/svg+xml">
 <meta property="og:url" content="https://santhoshbalaji.cloud/${pg.id}.html"><meta property="og:title" content="${pg.label} — Santhosh Balaji S"><meta property="og:description" content="${escape(pg.description)}"><meta property="og:type" content="website"><meta property="og:image" content="https://santhoshbalaji.cloud/assets/social-card.png"><meta name="twitter:card" content="summary_large_image">
-<link rel="stylesheet" href="${cssPath}"><script src="analytics.js?v=1" defer></script></head>
+<link rel="stylesheet" href="${cssPath}"><script src="analytics.js?v=1" defer></script>${pg.script ? `<script src="${pg.script}?v=1" defer></script>` : ""}</head>
 <body class="project-page"><a class="skip-link" href="#main">Skip to content</a>
 ${HEADER("")}
 <main id="main" class="project-story" style="--active-accent:var(--signal-blue)">
