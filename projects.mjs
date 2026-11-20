@@ -19,7 +19,6 @@ export const projects = [
   },
   {
     id: "atlas", name: "Atlas", category: "AI media",
-    image: "assets/projects/atlas-site.webp",
     imageAlt: "The Atlas project site: video production, thoughtfully connected",
     imageCaption: "The Atlas project page.",
     title: "An inspectable path from research to video.",
@@ -193,7 +192,6 @@ facts: [
   "FFmpeg-based export",
   "MCP integration for agent access",
 ],
-status: "Working production pipeline tested end to end",
 story: "I built Atlas around the handoffs in a research-led video. A source informs the script, and the script gives each scene a job. I wanted to be able to revisit a decision after seeing the storyboard or hearing the narration. I gave each stage its own place in the project, with controls to regenerate selected clips and change their visuals. I tested the whole workflow on a video about a seed growing into a seedling and took the project through to export.",
   },
 };

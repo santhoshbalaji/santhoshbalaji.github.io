@@ -1108,3 +1108,5 @@ img { display: block; max-width: 100%; }
 /* A vertical swipe on the globe scrolls the page; sideways drags and pinches still move the scene. */
 .universe-render { touch-action: pan-y; }
 @media (max-width: 580px) { .project-header nav { flex-wrap: nowrap; gap: .7rem; } .project-header { gap: .5rem; } }
+@media (max-width: 380px) { .project-header { flex-wrap: wrap; } .project-header nav { flex-wrap: wrap; justify-content: flex-start; } }
+.universe-render:focus-visible { outline: 2px solid var(--signal-blue); outline-offset: -4px; }
