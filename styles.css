@@ -1153,3 +1153,5 @@ img { display: block; max-width: 100%; }
 .enquiry-status[data-state="error"] { color: #a4262c; }
 .enquiry-aside p { margin: 0 0 1.25rem; color: var(--moonlight); line-height: 1.7; }
 @media (max-width: 860px) { .enquiry { grid-template-columns: 1fr; gap: 2rem; } .enquiry-form { grid-template-columns: 1fr; } }
+.contact-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 1.6rem; margin-top: 1.75rem; }
+#enquiry { scroll-margin-top: 9rem; }
