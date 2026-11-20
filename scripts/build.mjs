@@ -113,18 +113,19 @@ await writeFile("robots.txt", "User-agent: *\nAllow: /\nSitemap: https://santhos
 await writeFile("build-manifest.json", JSON.stringify({ entry, css: cssPath, outputs: Object.keys(result.metafile.outputs) }, null, 2) + "\n");
 console.log(`Built ${entry}, ${cssPath} and ${projects.length} project pages.`);
 
-// AI usage page, from usage.json (written by `npm run usage` from local T3 Code records).
+// AI usage page, from usage.json (written by `npm run usage` from T3 Code's usage cache and thread records).
 import { existsSync } from "node:fs";
 if (existsSync("usage.json")) {
   const u = JSON.parse(await readFile("usage.json", "utf8"));
   const n = (v) => v >= 1e9 ? (v / 1e9).toFixed(2) + " billion" : v >= 1e6 ? (v / 1e6).toFixed(1) + " million" : Math.round(v).toLocaleString("en-GB");
   const short = (v) => v >= 1e9 ? (v / 1e9).toFixed(2) + "B" : v >= 1e6 ? (v / 1e6).toFixed(1) + "M" : Math.round(v).toLocaleString("en-GB");
   const date = (d) => new Date(d + "T00:00:00Z").toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
-  const fresh = (x) => Math.max(0, x.input - x.cached);
+  const fresh = (x) => x.uncached + x.cacheWrites;
+  const share = (x) => ((x.processed / u.total.processed) * 100).toFixed(1) + "%";
   const max = Math.max(...u.days.map((d) => d.output));
-  const shown = (o) => Object.entries(o).filter(([, x]) => x.turns >= 5).sort((a, b) => b[1].input - a[1].input);
-  const row = (name, x) => `<tr><th scope="row">${name}</th><td>${x.turns.toLocaleString("en-GB")}</td><td>${short(x.input)}</td><td>${short(fresh(x))}</td><td>${short(x.output)}</td></tr>`;
-  const head = (first) => `<thead><tr><th scope="col">${first}</th><th scope="col">Turns</th><th scope="col">Tokens processed</th><th scope="col">New input</th><th scope="col">Output</th></tr></thead>`;
+  const shown = (o) => Object.entries(o).filter(([, x]) => x.processed >= 1e7).sort((a, b) => b[1].processed - a[1].processed);
+  const row = (name, x) => `<tr><th scope="row">${name}</th><td>${short(x.processed)}</td><td>${share(x)}</td><td>${short(fresh(x))}</td><td>${short(x.output)}</td></tr>`;
+  const head = (first) => `<thead><tr><th scope="col">${first}</th><th scope="col">Tokens processed</th><th scope="col">Share</th><th scope="col">New input</th><th scope="col">Output</th></tr></thead>`;
   const provRows = shown(u.providers).map(([k, x]) => row(k, x)).join("");
   const modelRows = shown(u.models).map(([k, x]) => row(k, x)).join("");
   const bars = u.days.map((d) => `<li><span>${date(d.day).replace(/ \d{4}$/, "")}</span><i style="width:${Math.max(1, (d.output / max) * 100).toFixed(1)}%"></i><b>${short(d.output)}</b></li>`).join("");
@@ -138,11 +139,11 @@ if (existsSync("usage.json")) {
 <body class="project-page"><a class="skip-link" href="#main">Skip to content</a>
 ${HEADER("")}
 <main id="main" class="project-story" style="--active-accent:var(--signal-blue)">
-<div class="project-intro"><p class="section-label">AI usage</p><h1>How I use coding agents, in numbers.</h1><p class="project-lead">From ${date(u.from)} to ${date(u.to)} I ran ${u.threads.toLocaleString("en-GB")} agent threads and ${u.total.turns.toLocaleString("en-GB")} turns. The agents wrote ${n(u.total.output)} tokens. I made the architecture decisions, reviewed the code and decided what shipped. These figures cover every agent turn recorded by the tool I run the agents in.</p></div>
-<section class="project-context" aria-labelledby="u1"><div><p class="section-label">Totals</p><h2 id="u1">What the numbers mean.</h2></div><div><ul class="usage-stats"><li><b>${short(u.total.output)}</b><span>Output: what the agents wrote</span></li><li><b>${short(fresh(u.total))}</b><span>New input: what they read for the first time</span></li><li><b>${short(u.total.input)}</b><span>Processed in total, mostly cached re-reads</span></li></ul><p>New input is the recorded input minus the recorded cached input. Most of the processed total is cached: earlier parts of a conversation that an agent reads again on later turns.</p></div></section>
+<div class="project-intro"><p class="section-label">AI usage</p><h1>How I use coding agents, in numbers.</h1><p class="project-lead">From ${date(u.from)} to ${date(u.to)} I ran ${u.threads.toLocaleString("en-GB")} agent threads. They processed ${n(u.total.processed)} tokens and wrote ${n(u.total.output)}. I made the architecture decisions, reviewed the code and decided what shipped. The figures come from T3 Code, the tool I run the agents in.</p></div>
+<section class="project-context" aria-labelledby="u1"><div><p class="section-label">Totals</p><h2 id="u1">What the numbers mean.</h2></div><div><ul class="usage-stats"><li><b>${short(u.total.output)}</b><span>Output: what the agents wrote</span></li><li><b>${short(fresh(u.total))}</b><span>New input: what they read for the first time</span></li><li><b>${short(u.total.processed)}</b><span>Processed in total, mostly cached re-reads</span></li></ul><p>New input is input that was not already cached. Most of the processed total is cached: earlier parts of a conversation that an agent reads again on later turns.</p></div></section>
 <section aria-labelledby="u2"><p class="section-label">By day</p><h2 id="u2">Output tokens per day.</h2><ol class="usage-days">${bars}</ol></section>
 <section aria-labelledby="u3"><p class="section-label">By provider</p><h2 id="u3">Usage by provider.</h2><div class="usage-table" role="region" aria-labelledby="u3" tabindex="0"><table>${head("Provider")}<tbody>${provRows}</tbody></table></div></section>
-<section aria-labelledby="u4"><p class="section-label">By model</p><h2 id="u4">Usage by model.</h2><div class="usage-table" role="region" aria-labelledby="u4" tabindex="0"><table>${head("Model")}<tbody>${modelRows}</tbody></table></div><p class="diagram-note">The model name was not recorded for every turn, so this table covers fewer turns than the provider table. Rows with fewer than five turns are left out of both tables. Days are in UTC. Updated ${date(u.generatedAt)}.</p></section>
+<section aria-labelledby="u4"><p class="section-label">By model</p><h2 id="u4">Usage by model.</h2><div class="usage-table" role="region" aria-labelledby="u4" tabindex="0"><table>${head("Model")}<tbody>${modelRows}</tbody></table></div><p class="diagram-note">Rows under 10 million tokens are left out. Days are in India time. Updated ${date(u.generatedAt)}.</p></section>
 <footer class="project-next"><p>Want this way of working on your project?</p><a class="mission-link" href="work-with-me.html">Work with me →</a><a href="about.html">Back to About</a></footer></main>
 ${FOOTER("")}</body></html>`;
   await writeFile("usage.html", page);

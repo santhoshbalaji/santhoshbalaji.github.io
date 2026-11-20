@@ -40,8 +40,8 @@ enforce gzip budgets of 16 KB initial JS, 220 KB total JS and 20 KB CSS.
 
 `npm run preview:assets` captures loading previews directly from the live 3D canvas
 (run the local server first). Capture again after changing the camera/composition.
-The NammaTN, JurisField and MapSmith site images are dated screenshots of their public sites.
-Atlas has no image. MapSmith shows
+The NammaTN, JurisField and Mapsmith site images are dated screenshots of their public sites.
+Atlas has no image. Mapsmith shows
 an implementation workflow only; no page uses a fabricated UI screenshot.
 
 Themes: the home page uses the night theme (`data-theme="orbital"`); project notes and the

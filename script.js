@@ -6,7 +6,7 @@ const projectData = {
   jurisfield: { name: "JurisField", className: "Field operations system", orbitClass: "Field operations", orbitCode: "04 / 04", orbitNote: "Trusted evidence from field to office.", logo: "assets/logos/jurisfield.svg" },
   oriv: { name: "Oriv", className: "Native browser", orbitClass: "Native browser", orbitCode: "03 / 04", orbitNote: "A private browser on the system’s own engine.", logo: "assets/logos/oriv.svg" },
   nammatn: { name: "NammaTN", className: "Civic technology system", orbitClass: "Civic technology", orbitCode: "02 / 04", orbitNote: "Public reporting with visible follow-through.", logo: "assets/logos/nammatn.svg" },
-  mapsmith: { name: "MapSmith", className: "Enterprise GIS platform", orbitClass: "Enterprise GIS", orbitCode: "01 / 04", orbitNote: "A programmable core for spatial systems.", logo: "assets/logos/mapsmith.svg" },
+  mapsmith: { name: "Mapsmith", className: "Enterprise GIS platform", orbitClass: "Enterprise GIS", orbitCode: "01 / 04", orbitNote: "A programmable core for spatial systems.", logo: "assets/logos/mapsmith.svg" },
 };
 
 const missionTabs = [...document.querySelectorAll(".mission-tab")];
